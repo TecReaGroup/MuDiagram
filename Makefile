@@ -1,4 +1,4 @@
-.PHONY: install run dev backend
+.PHONY: install run dev backend docker
 
 install:
 	npm install
@@ -11,3 +11,6 @@ dev:
 
 backend:
 	npm run backend
+
+docker:
+	docker compose up -d --build --remove-orphans
