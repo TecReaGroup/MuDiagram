@@ -1,13 +1,15 @@
 import { log } from '../../infrastructure/logger.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
-import { readJsonBody, sendFile, sendJson, sendNoContent } from '../../shared/http.mjs';
+import { readJsonBody, sendFile, sendJson } from '../../shared/http.mjs';
+import { assertFolderExists } from '../folder/folder-store.mjs';
 import {
   createProject,
-  deleteProject,
   disableShare,
   enableShare,
   getProject,
   listProjects,
+  moveProjectToFolder,
+  moveProjectToTrash,
   readDiagramRendition,
   renameProject,
   saveDiagram,
@@ -24,6 +26,15 @@ function readProjectName(body) {
     throw new HttpError(400, `Project name must be 1-${MAX_PROJECT_NAME_LENGTH} characters`);
   }
   return name;
+}
+
+/** A missing `folderId` means "no folder"; any other value must name an existing folder. */
+async function readFolderId(body) {
+  const folderId = body?.folderId ?? null;
+  if (folderId === null) return null;
+  if (typeof folderId !== 'string') throw new HttpError(400, 'folderId must be a string or null');
+  await assertFolderExists(folderId);
+  return folderId;
 }
 
 function decodeDataUrl(dataUrl, expectedMime) {
@@ -54,7 +65,8 @@ export const projectRoutes = [
     method: 'POST',
     path: new RegExp('^/api/project$'),
     handle: async (request, response) => {
-      const project = await createProject(readProjectName(await readJsonBody(request)));
+      const body = await readJsonBody(request);
+      const project = await createProject(readProjectName(body), await readFolderId(body));
       log('info', 'Project', 'Project created', { projectId: project.id });
       sendJson(response, 201, project);
     },
@@ -75,9 +87,17 @@ export const projectRoutes = [
     method: 'DELETE',
     path: new RegExp(`^${PROJECT_PATH}$`),
     handle: async (request, response, { projectId }) => {
-      await deleteProject(projectId);
-      log('info', 'Project', 'Project deleted', { projectId });
-      sendNoContent(response);
+      const project = await moveProjectToTrash(projectId);
+      log('info', 'Project', 'Project moved to trash', { projectId });
+      sendJson(response, 200, project);
+    },
+  },
+  {
+    method: 'PUT',
+    path: new RegExp(`^${PROJECT_PATH}/folder$`),
+    handle: async (request, response, { projectId }) => {
+      const folderId = await readFolderId(await readJsonBody(request));
+      sendJson(response, 200, await moveProjectToFolder(projectId, folderId));
     },
   },
   {

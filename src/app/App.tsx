@@ -1,14 +1,21 @@
 import '../styles.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { EditorPage } from '../pages/editor/EditorPage';
-import { LibraryPage } from '../pages/library/LibraryPage';
+import { LibraryLayout } from '../pages/library/LibraryLayout';
+import { ProjectListPage } from '../pages/library/ProjectListPage';
 import { SharePage } from '../pages/share/SharePage';
+import { TrashPage } from '../pages/trash/TrashPage';
 
 const router = createBrowserRouter([
-  { path: '/', element: <LibraryPage /> },
-  // TODO: give trash and folders their own filtered views once the backend stores them.
-  { path: '/trash', element: <LibraryPage /> },
-  { path: '/folder/:folderId', element: <LibraryPage /> },
+  {
+    path: '/',
+    element: <LibraryLayout />,
+    children: [
+      { index: true, element: <ProjectListPage /> },
+      { path: 'folder/:folderId', element: <ProjectListPage /> },
+      { path: 'trash', element: <TrashPage /> },
+    ],
+  },
   { path: '/project/:projectId', element: <EditorPage /> },
   { path: '/share/:shareToken', element: <SharePage /> },
 ]);

@@ -1,7 +1,8 @@
 // Size and tone are separate lookups because Tailwind does not guarantee which of two
 // conflicting utilities wins; appending `size-7` to a `size-8` class silently does nothing.
 
-type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger';
+// `inverse` sits on a dark (selected) surface such as an active nav item.
+type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger' | 'inverse';
 type ButtonSize = 'md' | 'lg' | 'xl';
 type IconButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -20,6 +21,7 @@ const BUTTON_TONE_CLASS: Record<ButtonTone, string> = {
   ghost: 'text-ink-muted hover:bg-hover hover:text-ink',
   accent: 'border border-brand/30 bg-brand-soft text-brand-ink shadow-xs hover:border-brand/40',
   danger: 'text-ink-muted hover:bg-danger-soft hover:text-danger',
+  inverse: 'text-white/70 hover:bg-white/15 hover:text-white',
 };
 
 const BUTTON_SIZE_CLASS: Record<ButtonSize, string> = {
@@ -48,3 +50,8 @@ export function iconButtonClass(tone: ButtonTone = 'ghost', size: IconButtonSize
 export const NAV_ITEM_CLASS = `group flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-ink-muted transition-colors duration-150 hover:bg-hover hover:text-ink aria-[current=page]:bg-ink aria-[current=page]:font-medium aria-[current=page]:text-white aria-[current=page]:hover:bg-ink aria-[current=page]:hover:text-white [&_svg]:size-4 [&_svg]:shrink-0 ${FOCUS_RING}`;
 
 export const NAV_ITEM_COUNT_CLASS = 'ml-auto text-xs tabular-nums text-ink-faint group-aria-[current=page]:text-white/60';
+
+export const MENU_PANEL_CLASS = 'z-20 animate-pop-in rounded-lg bg-surface p-1 shadow-pop';
+
+// Selection is driven by aria-checked (menuitemradio), so callers never pass a selected flag.
+export const MENU_ITEM_CLASS = 'h-8 w-full truncate rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-sunken hover:text-ink focus-visible:bg-sunken focus-visible:outline-none aria-checked:bg-sunken aria-checked:font-medium aria-checked:text-ink';

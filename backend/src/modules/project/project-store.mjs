@@ -6,6 +6,7 @@ import { HttpError } from '../../shared/http-error.mjs';
 
 const PROJECT_META_FILE = 'project.json';
 const SHARE_TOKEN_BYTES = 24;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const EMPTY_DIAGRAM_XML = '<mxfile><diagram name="Page-1" id="page-1"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/></root></mxGraphModel></diagram></mxfile>';
 
 /** The stored renditions of a project's diagram, keyed by the extension used in URLs. */
@@ -16,6 +17,7 @@ export const DIAGRAM_RENDITIONS = {
 };
 
 const projectRoot = appConfig.storage.projectRoot;
+const trashRetentionMs = appConfig.trash.retentionDays * DAY_MS;
 const projectLocks = new Map();
 
 function projectDirectory(projectId) {
@@ -41,9 +43,14 @@ async function withProjectLock(projectId, operation) {
   }
 }
 
+// Fills fields added after the first release so older project.json files read like new ones.
+function normalizeProjectMeta(project) {
+  return { folderId: null, trashedAt: null, ...project };
+}
+
 async function readProjectMeta(projectId) {
   try {
-    return JSON.parse(await readFile(join(projectDirectory(projectId), PROJECT_META_FILE), 'utf8'));
+    return normalizeProjectMeta(JSON.parse(await readFile(join(projectDirectory(projectId), PROJECT_META_FILE), 'utf8')));
   } catch (error) {
     if (error?.code === 'ENOENT') throw new HttpError(404, 'Project not found');
     throw error;
@@ -62,20 +69,41 @@ async function updateProjectMeta(projectId, applyChange) {
   });
 }
 
-export async function listProjects() {
+async function readAllProjects() {
   await mkdir(projectRoot, { recursive: true });
   const entries = await readdir(projectRoot, { withFileTypes: true });
   const projects = await Promise.all(entries
     .filter(entry => entry.isDirectory())
     .map(entry => readProjectMeta(entry.name).catch(() => null)));
-  return projects
-    .filter(Boolean)
+  return projects.filter(Boolean);
+}
+
+function isTrashed(project) {
+  return project.trashedAt !== null;
+}
+
+function withPurgeTime(project) {
+  return { ...project, purgeAt: new Date(Date.parse(project.trashedAt) + trashRetentionMs).toISOString() };
+}
+
+/** Projects outside the trash, most recently updated first. */
+export async function listProjects() {
+  return (await readAllProjects())
+    .filter(project => !isTrashed(project))
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
 }
 
-export async function createProject(name) {
+/** Trashed projects with the time they will be purged, most recently trashed first. */
+export async function listTrashedProjects() {
+  return (await readAllProjects())
+    .filter(isTrashed)
+    .sort((left, right) => right.trashedAt.localeCompare(left.trashedAt))
+    .map(withPurgeTime);
+}
+
+export async function createProject(name, folderId) {
   const now = new Date().toISOString();
-  const project = { id: randomUUID(), name, createdAt: now, updatedAt: now, shareToken: null };
+  const project = { id: randomUUID(), name, folderId, createdAt: now, updatedAt: now, shareToken: null, trashedAt: null };
   await mkdir(projectDirectory(project.id), { recursive: true });
   await writeFileAtomically(join(projectDirectory(project.id), DIAGRAM_RENDITIONS.drawio.fileName), EMPTY_DIAGRAM_XML);
   await writeProjectMeta(project);
@@ -90,9 +118,46 @@ export function renameProject(projectId, name) {
   return updateProjectMeta(projectId, project => ({ ...project, name, updatedAt: new Date().toISOString() }));
 }
 
-export async function deleteProject(projectId) {
-  await readProjectMeta(projectId);
-  await withProjectLock(projectId, () => rm(projectDirectory(projectId), { recursive: true, force: true }));
+/** `folderId` must name an existing folder or be null; the caller validates it. */
+export function moveProjectToFolder(projectId, folderId) {
+  return updateProjectMeta(projectId, project => ({ ...project, folderId }));
+}
+
+/** Clears the folder of every project in it, trashed ones included, so a restore never points at a deleted folder. */
+export async function detachProjectsFromFolder(folderId) {
+  const projects = (await readAllProjects()).filter(project => project.folderId === folderId);
+  await Promise.all(projects.map(project => moveProjectToFolder(project.id, null)));
+}
+
+/** Soft delete: the project stays restorable until the trash retention period ends. */
+export async function moveProjectToTrash(projectId) {
+  const project = await updateProjectMeta(projectId, current => {
+    if (isTrashed(current)) throw new HttpError(409, 'Project is already in the trash');
+    return { ...current, trashedAt: new Date().toISOString() };
+  });
+  return withPurgeTime(project);
+}
+
+export function restoreProject(projectId) {
+  return updateProjectMeta(projectId, project => {
+    if (!isTrashed(project)) throw new HttpError(409, 'Project is not in the trash');
+    return { ...project, trashedAt: null };
+  });
+}
+
+/** Only trashed projects can be removed for good, so a single click never destroys live work. */
+export function deleteProjectPermanently(projectId) {
+  return withProjectLock(projectId, async () => {
+    if (!isTrashed(await readProjectMeta(projectId))) throw new HttpError(409, 'Move the project to the trash first');
+    await rm(projectDirectory(projectId), { recursive: true, force: true });
+  });
+}
+
+/** Removes trashed projects whose retention period has ended and returns their ids. */
+export async function purgeExpiredTrash(now = Date.now()) {
+  const expiredProjects = (await listTrashedProjects()).filter(project => Date.parse(project.purgeAt) <= now);
+  await Promise.all(expiredProjects.map(project => deleteProjectPermanently(project.id)));
+  return expiredProjects.map(project => project.id);
 }
 
 /** Stores the diagram together with the SVG/PNG snapshots exported from the same editor state. */
@@ -134,6 +199,7 @@ export function disableShare(projectId) {
   return updateProjectMeta(projectId, project => ({ ...project, shareToken: null }));
 }
 
+/** Trashed projects keep their token for a later restore, but their public links stop resolving. */
 export async function findProjectByShareToken(shareToken) {
   const projects = await listProjects();
   const project = projects.find(candidate => candidate.shareToken === shareToken);

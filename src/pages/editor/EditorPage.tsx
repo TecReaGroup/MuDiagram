@@ -1,4 +1,4 @@
-import { ChevronRight, CloudCheck, Share2, Sparkles } from 'lucide-react';
+import { ChevronRight, CloudCheck, Share2, Sparkle } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { findSampleProject } from '../../entities/project/sample-project';
@@ -47,7 +47,7 @@ export function EditorPage() {
             aria-pressed={isAiPanelOpen}
             className={buttonClass(isAiPanelOpen ? 'accent' : 'primary')}
           >
-            <Sparkles />
+            <Sparkle />
             AI 助手
           </button>
           {isSharePanelOpen && (

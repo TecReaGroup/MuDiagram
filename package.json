@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "backend": "node backend/server.mjs",
+    "backend": "node --watch backend/server.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

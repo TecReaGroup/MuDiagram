@@ -1,6 +1,7 @@
 import { createApp } from './src/app.mjs';
 import { environment } from './src/config/environment.mjs';
 import { log, serializeError } from './src/infrastructure/logger.mjs';
+import { startTrashPurgeSchedule } from './src/modules/project/trash-purge.mjs';
 
 const server = createApp();
 server.on('error', error => {
@@ -13,6 +14,7 @@ server.listen(environment.port, () => {
     url: `http://localhost:${environment.port}`,
     environment: environment.isProduction ? 'production' : 'development',
   });
+  startTrashPurgeSchedule();
 });
 
 for (const signal of ['SIGTERM', 'SIGINT']) {

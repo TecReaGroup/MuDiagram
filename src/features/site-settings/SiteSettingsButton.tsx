@@ -1,11 +1,13 @@
-import { Info, Settings, Sparkles, X } from 'lucide-react';
+import { Info, Languages, Settings, Sparkle, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { iconButtonClass, NAV_ITEM_CLASS } from '../../shared/ui/control-class';
 import { AboutSettingsSection } from './AboutSettingsSection';
 import { AiModelSettingsSection } from './AiModelSettingsSection';
+import { LanguageSettingsSection } from './LanguageSettingsSection';
 
 const SETTINGS_SECTIONS = [
-  { id: 'ai-model', label: 'AI 模型', title: 'AI 模型', description: '选择 AI 助手生成图表时使用的模型服务。', Icon: Sparkles, Content: AiModelSettingsSection },
+  { id: 'ai-model', label: 'AI 模型', title: 'AI 模型', description: '配置 AI 助手生成图表时使用的模型服务。', Icon: Sparkle, Content: AiModelSettingsSection },
+  { id: 'language', label: '语言', title: '语言', description: '选择界面显示的语言。', Icon: Languages, Content: LanguageSettingsSection },
   { id: 'about', label: '关于', title: '关于', description: '关于 MuDiagram。', Icon: Info, Content: AboutSettingsSection },
 ] as const;
 

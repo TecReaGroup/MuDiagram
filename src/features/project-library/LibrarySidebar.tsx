@@ -1,18 +1,39 @@
-import { ChevronRight, Folder, LayoutGrid, Plus, Trash } from 'lucide-react';
+import { ChevronRight, Folder as FolderIcon, LayoutGrid, Plus, Trash } from 'lucide-react';
 import { useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
-import { SAMPLE_FOLDERS } from '../../entities/folder/sample-folder';
-import { SAMPLE_PROJECTS } from '../../entities/project/sample-project';
+import { Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
+import type { Folder } from '../../entities/folder/folder-api';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { buttonClass, FOCUS_RING, iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
+import { InlineNameInput } from '../../shared/ui/InlineNameInput';
+import { FolderNavItem } from './FolderNavItem';
+import type { ProjectLibrary } from './use-project-library';
 
-const LIBRARY_FOLDERS = [
-  { path: '/', label: '全部图表', count: SAMPLE_PROJECTS.length, Icon: LayoutGrid },
-  { path: '/trash', label: '回收站', count: 0, Icon: Trash },
-] as const;
+type LibrarySidebarProps = {
+  library: ProjectLibrary;
+  isCreatingProject: boolean;
+  onCreateProject: () => void;
+};
 
-export function LibrarySidebar() {
+export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: LibrarySidebarProps) {
+  const navigate = useNavigate();
+  const viewedFolderId = useMatch('/folder/:folderId')?.params.folderId;
   const [isFolderListOpen, setIsFolderListOpen] = useState(true);
+  const [isNamingNewFolder, setIsNamingNewFolder] = useState(false);
+
+  const libraryLinks = [
+    { path: '/', label: '全部图表', count: library.projects.length, Icon: LayoutGrid },
+    { path: '/trash', label: '回收站', count: library.trashedProjects.length, Icon: Trash },
+  ];
+
+  function startNewFolder() {
+    setIsFolderListOpen(true);
+    setIsNamingNewFolder(true);
+  }
+
+  async function deleteFolder(folder: Folder) {
+    await library.deleteFolder(folder);
+    if (viewedFolderId === folder.id) navigate('/');
+  }
 
   return (
     <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col px-4 pt-2 pb-8 md:flex">
@@ -21,7 +42,7 @@ export function LibrarySidebar() {
         <span className="text-base font-semibold tracking-[-0.02em]">MuDiagram</span>
       </Link>
       <nav className="mt-4 space-y-1">
-        {LIBRARY_FOLDERS.map(({ path, label, count, Icon }) => (
+        {libraryLinks.map(({ path, label, count, Icon }) => (
           <NavLink key={path} to={path} end className={NAV_ITEM_CLASS}>
             <Icon />
             {label}
@@ -29,7 +50,7 @@ export function LibrarySidebar() {
           </NavLink>
         ))}
       </nav>
-      <section className="mt-7">
+      <section className="mt-7 min-h-0 overflow-y-auto">
         <div className="flex h-9 items-center justify-between pr-0.5">
           <h2 className="flex-1">
             <button
@@ -43,24 +64,41 @@ export function LibrarySidebar() {
               文件夹
             </button>
           </h2>
-          <button type="button" aria-label="新建文件夹" title="新建文件夹" className={iconButtonClass()}>
+          <button type="button" onClick={startNewFolder} aria-label="新建文件夹" title="新建文件夹" className={iconButtonClass()}>
             <Plus />
           </button>
         </div>
         <nav id="folder-list" hidden={!isFolderListOpen} className="mt-1 space-y-0.5">
-          {SAMPLE_FOLDERS.map(folder => (
-            <NavLink key={folder.id} to={`/folder/${folder.id}`} className={NAV_ITEM_CLASS}>
-              <Folder />
-              <span className="truncate">{folder.name}</span>
-              <span className={NAV_ITEM_COUNT_CLASS}>{folder.diagramCount}</span>
-            </NavLink>
+          {library.folders.map(folder => (
+            <FolderNavItem
+              key={folder.id}
+              folder={folder}
+              projectCount={library.projects.filter(project => project.folderId === folder.id).length}
+              onRename={(target, name) => void library.renameFolder(target, name)}
+              onDelete={target => void deleteFolder(target)}
+            />
           ))}
+          {isNamingNewFolder && (
+            <div className="flex h-9 items-center gap-2.5 px-3">
+              <FolderIcon className="size-4 shrink-0 text-ink-muted" />
+              <InlineNameInput
+                initialName=""
+                label="新文件夹名称"
+                onSubmit={name => void library.createFolder(name)}
+                onFinish={() => setIsNamingNewFolder(false)}
+                className="-ml-1.5 flex-1"
+              />
+            </div>
+          )}
+          {library.folders.length === 0 && !isNamingNewFolder && (
+            <p className="px-3 py-1.5 text-xs text-ink-faint">还没有文件夹</p>
+          )}
         </nav>
       </section>
-      <Link to="/project/new" className={`${buttonClass('primary', 'xl')} mt-auto w-full`}>
+      <button type="button" onClick={onCreateProject} disabled={isCreatingProject} className={`${buttonClass('primary', 'xl')} mt-auto w-full`}>
         <Plus />
         新建图表
-      </Link>
+      </button>
     </aside>
   );
 }

@@ -41,7 +41,6 @@ export const aiRoutes = [
         instructions: buildDiagramInstructions(xml),
         messages: await convertToModelMessages(messages),
         tools: diagramTools,
-        maxOutputTokens: appConfig.ai.maxOutputTokens,
         abortSignal: abortController.signal,
         onError: ({ error }) => log('error', 'AI', 'Chat stream failed', { error: serializeError(error) }),
         onFinish: ({ finishReason, totalUsage }) => log('info', 'AI', 'Chat turn finished', {
