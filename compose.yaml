@@ -20,7 +20,6 @@ services:
     restart: unless-stopped
     command: tunnel run
     environment:
-      # Read from .env; set the tunnel's public hostname service to http://mudiagram:8787 in the Zero Trust dashboard.
-      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required}
+      TUNNEL_TOKEN: <your_tunnel_token>
     depends_on:
       - mudiagram
