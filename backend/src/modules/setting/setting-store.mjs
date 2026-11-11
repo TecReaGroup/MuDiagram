@@ -4,15 +4,14 @@ import { dirname } from 'node:path';
 import { appConfig } from '../../config/app-config.mjs';
 
 const settingFile = appConfig.storage.settingFile;
-const DEFAULT_SETTING = { language: appConfig.ui.language };
 let settingWriteQueue = Promise.resolve();
 
-/** Saved settings layered over the config.toml defaults. */
+/** Settings changed from the Settings dialog; unset keys fall back to client-side defaults. */
 export async function readSetting() {
   try {
-    return { ...DEFAULT_SETTING, ...JSON.parse(await readFile(settingFile, 'utf8')) };
+    return JSON.parse(await readFile(settingFile, 'utf8'));
   } catch (error) {
-    if (error?.code === 'ENOENT') return DEFAULT_SETTING;
+    if (error?.code === 'ENOENT') return {};
     throw error;
   }
 }

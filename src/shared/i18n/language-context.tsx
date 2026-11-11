@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { requestJson } from '../api/request-json';
 import { log, serializeError } from '../lib/logger';
-import { DEFAULT_LANGUAGE, MESSAGES, type Language, type MessageKey } from './message';
+import { FALLBACK_LANGUAGE, LANGUAGES, MESSAGES, type Language, type MessageKey } from './message';
 
 const MODULE = 'I18n';
 const SETTING_API = '/api/setting';
@@ -18,16 +18,28 @@ export type I18n = {
 
 const I18nContext = createContext<I18n | null>(null);
 
+/** First system language we support, matched exactly, then by primary subtag (e.g. "zh-TW" → "zh-CN"). */
+function detectSystemLanguage(): Language {
+  for (const systemLanguage of navigator.languages) {
+    const exactMatch = LANGUAGES.find(language => language.toLowerCase() === systemLanguage.toLowerCase());
+    if (exactMatch) return exactMatch;
+    const primarySubtag = systemLanguage.split('-')[0].toLowerCase();
+    const subtagMatch = LANGUAGES.find(language => language.split('-')[0] === primarySubtag);
+    if (subtagMatch) return subtagMatch;
+  }
+  return FALLBACK_LANGUAGE;
+}
+
 /** Loads the saved language before rendering, so the UI never flashes in the wrong language. */
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Language | null>(null);
 
   useEffect(() => {
-    requestJson<{ language: Language }>(SETTING_API)
-      .then(setting => setLanguage(setting.language))
+    requestJson<{ language?: Language }>(SETTING_API)
+      .then(setting => setLanguage(setting.language ?? detectSystemLanguage()))
       .catch(error => {
         log('error', MODULE, 'Load language failed', serializeError(error));
-        setLanguage(DEFAULT_LANGUAGE);
+        setLanguage(detectSystemLanguage());
       });
   }, []);
 

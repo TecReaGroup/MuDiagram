@@ -9,16 +9,3 @@ setting_file = "./backend/data/setting/setting.json"
 [trash]
 # Days a deleted project stays in the trash before it is purged permanently
 retention_days = 7
-
-[ui]
-# Default interface language; a language picked in Settings overrides it.
-# Options: "zh-CN" | "en-US"
-language = "zh-CN"
-
-[ai]
-# Any OpenAI-compatible Chat Completions endpoint (OpenAI, DeepSeek, OpenRouter, Ollama, ...)
-model = "claude-sonnet-5-5"
-# Leave empty to use the official OpenAI endpoint
-base_url = ""
-# Name of the environment variable that holds the API key
-api_key_env = "AI_API_KEY"

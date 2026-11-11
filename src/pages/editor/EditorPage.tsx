@@ -1,7 +1,8 @@
 import { ChevronRight, CloudCheck, Share2, Sparkle } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { findSampleProject } from '../../entities/project/sample-project';
+import { listFolders, type Folder } from '../../entities/folder/folder-api';
+import { getProject, type Project } from '../../entities/project/project-api';
 import { AiChatPanel } from '../../features/ai-assistant/AiChatPanel';
 import { DiagramCanvas } from '../../features/diagram-editor/DiagramCanvas';
 import { SharePanel } from '../../features/project-share/SharePanel';
@@ -12,20 +13,44 @@ import { buttonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 export function EditorPage() {
   const { t } = useI18n();
   const { projectId = '' } = useParams();
-  const project = findSampleProject(projectId);
+  const [project, setProject] = useState<Project | null>(null);
+  const [folder, setFolder] = useState<Folder | null>(null);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+  const isShared = project?.shareToken != null;
+
+  useEffect(() => {
+    let isCurrent = true;
+    Promise.all([getProject(projectId), listFolders()]).then(
+      ([loadedProject, folders]) => {
+        if (!isCurrent) return;
+        setProject(loadedProject);
+        setFolder(folders.find(candidate => candidate.id === loadedProject.folderId) ?? null);
+      },
+      () => {
+        if (!isCurrent) return;
+        setProject(null);
+        setFolder(null);
+      },
+    );
+    return () => { isCurrent = false; };
+  }, [projectId]);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
 
   return (
     <div className="flex h-screen flex-col bg-canvas">
-      <header className="flex h-12 shrink-0 items-center gap-1 px-3">
+      <header className="flex h-12 shrink-0 items-center gap-3 px-3">
         <Link to="/" aria-label={t('editor.backToLibrary')} className="rounded-lg p-0.5 transition-opacity hover:opacity-80">
           <BrandMark className="size-6" />
         </Link>
-        <nav className="flex min-w-0 items-center gap-1 text-[13px]">
-          <Link to="/" className="hidden rounded-md px-1.5 py-1 text-ink-muted transition-colors hover:bg-hover hover:text-ink sm:block">{t('library.allProjects')}</Link>
+        <nav className="flex min-w-0 items-center gap-0.5 text-[13px]">
+          <Link
+            to={folder ? `/folder/${folder.id}` : '/'}
+            className="hidden max-w-48 truncate rounded-md px-1.5 py-1 text-ink-muted transition-colors hover:bg-hover hover:text-ink sm:block"
+          >
+            {folder?.name ?? t('library.allProjects')}
+          </Link>
           <ChevronRight className="hidden size-3.5 shrink-0 text-ink-faint sm:block" />
-          <h1 className="truncate px-1.5 text-[13px] font-medium">{project.name}</h1>
+          <h1 className="truncate px-1.5 text-[13px] font-medium">{project?.name}</h1>
         </nav>
         <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title={t('editor.allChangesSaved')}>
           <CloudCheck className="size-3.5" />
@@ -41,7 +66,7 @@ export function EditorPage() {
           >
             <Share2 />
             {t('editor.share')}
-            {project.isShared && <span className="size-1.5 rounded-full bg-success" aria-label={t('editor.isPublic')} />}
+            {isShared && <span className="size-1.5 rounded-full bg-success" aria-label={t('editor.isPublic')} />}
           </button>
           <button
             type="button"
@@ -54,7 +79,7 @@ export function EditorPage() {
           </button>
           {isSharePanelOpen && (
             <div className="absolute top-10 right-0 z-30 origin-top-right animate-pop-in">
-              <SharePanel initiallyShared={project.isShared} />
+              <SharePanel initiallyShared={isShared} />
             </div>
           )}
         </div>

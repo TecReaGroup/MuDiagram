@@ -54,7 +54,9 @@
 }
 
 @layer base {
+  /* Reserve the scrollbar track so switching between long and short pages doesn't shift the centered layout. */
   :root {
+    scrollbar-gutter: stable;
     color-scheme: light;
     font-synthesis: none;
     text-rendering: optimizeLegibility;

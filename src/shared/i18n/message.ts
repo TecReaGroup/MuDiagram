@@ -1,5 +1,6 @@
 export const LANGUAGES = ['zh-CN', 'en-US'] as const;
-export const DEFAULT_LANGUAGE: Language = 'zh-CN';
+// Used when none of the system languages is supported.
+export const FALLBACK_LANGUAGE: Language = 'en-US';
 
 export type Language = (typeof LANGUAGES)[number];
 

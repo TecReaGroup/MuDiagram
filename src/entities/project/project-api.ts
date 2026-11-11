@@ -21,6 +21,8 @@ const TRASH_API = '/api/trash';
 
 export const listProjects = () => requestJson<Project[]>(PROJECT_API);
 
+export const getProject = (projectId: string) => requestJson<Project>(`${PROJECT_API}/${projectId}`);
+
 export const createProject = (name: string, folderId: string | null) =>
   requestJson<Project>(PROJECT_API, { method: 'POST', body: JSON.stringify({ name, folderId }) });
 

@@ -5,7 +5,6 @@ import {
   toUIMessageStream,
   validateUIMessages,
 } from 'ai';
-import { appConfig } from '../../config/app-config.mjs';
 import { log, serializeError } from '../../infrastructure/logger.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
 import { readJsonBody } from '../../shared/http.mjs';
@@ -29,7 +28,7 @@ export const aiRoutes = [
     path: new RegExp('^/api/ai/chat$'),
     handle: async (request, response) => {
       const { messages, xml } = await readChatRequest(request);
-      const model = createLanguageModel();
+      const model = await createLanguageModel();
       const abortController = new AbortController();
       response.on('close', () => {
         if (!response.writableFinished) abortController.abort();
@@ -44,7 +43,7 @@ export const aiRoutes = [
         abortSignal: abortController.signal,
         onError: ({ error }) => log('error', 'AI', 'Chat stream failed', { error: serializeError(error) }),
         onFinish: ({ finishReason, totalUsage }) => log('info', 'AI', 'Chat turn finished', {
-          model: appConfig.ai.model,
+          model: model.modelId,
           finishReason,
           outputTokens: totalUsage?.outputTokens,
           durationMs: Date.now() - startedAt,
