@@ -20,7 +20,9 @@ type MxGraph = {
   panningHandler: { isForcePanningEvent: (mouseEvent: MxMouseEvent) => boolean };
   getSelectionCells: () => MxCell[];
   convertValueToString: (cell: MxCell) => string;
+  addListener: (eventName: string, listener: () => void) => void;
 };
+type MxEventObjectConstructor = new (eventName: string) => object;
 export type DrawioEditorUi = {
   editor: { graph: MxGraph };
   hoverIcons: { isResetEvent: (event: MouseEvent, allowShift?: boolean) => boolean };
@@ -28,14 +30,27 @@ export type DrawioEditorUi = {
   sketchPickerMenuElt: HTMLElement;
   // Executes draw.io's undoable ReplaceDiagram change on the current page.
   replaceDiagramData: (graphModelXml: string) => void;
+  fireEvent: (event: object) => void;
 };
 type DrawioWindow = Window & {
   Draw?: { loadPlugin?: (plugin: (editorUi: DrawioEditorUi) => void) => void };
+  mxEventObject: MxEventObjectConstructor;
 };
 
 /** Cell labels are HTML (`html=1`); the model only needs their text. */
 function toPlainText(html: string) {
   return new DOMParser().parseFromString(html, 'text/html').body.textContent?.trim() ?? '';
+}
+
+/**
+ * NOTE: The embed keeps the graph disabled until the diagram arrives, so draw.io builds the top
+ * toolbar's text/rectangle/freehand/insert buttons as disabled (greyed out) and never rebuilds them
+ * on `enabledChanged`; "lockedChanged" is one of the events that does rebuild that toolbar.
+ */
+function keepPickerToolbarInSyncWithGraph(frameWindow: DrawioWindow, editorUi: DrawioEditorUi) {
+  const rebuildPickerToolbar = () => editorUi.fireEvent(new frameWindow.mxEventObject('lockedChanged'));
+  editorUi.editor.graph.addListener('enabledChanged', rebuildPickerToolbar);
+  rebuildPickerToolbar();
 }
 
 function readGraphModelXml(mxfileXml: string) {
@@ -56,6 +71,7 @@ export function connectDrawioEditor(frameWindow: Window): DrawioEditorBridge | n
   const connectedEditorUi = editorUi as DrawioEditorUi | null;
   if (!connectedEditorUi || typeof connectedEditorUi.replaceDiagramData !== 'function') return null;
 
+  keepPickerToolbarInSyncWithGraph(frameWindow as DrawioWindow, connectedEditorUi);
   const { graph } = connectedEditorUi.editor;
   return {
     readSelection: () => graph.getSelectionCells().map(cell => ({

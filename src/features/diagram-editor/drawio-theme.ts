@@ -23,6 +23,14 @@ const FONT_STYLESHEET_URL =
 
 const BRAND_SOFT_HOVER = `color-mix(in srgb, ${DESIGN_TOKEN.brand} 14%, ${DESIGN_TOKEN.surface})`;
 
+// NOTE: draw.io toolbar icons are black SVG background images, so `color` cannot tint them.
+// These filter chains map any black pixel to the token colour exactly (solved offline with
+// Barrett Sonntag's black-to-hex filter solver); re-solve them if the tokens change.
+const ICON_FILTER = {
+  inkMuted: 'brightness(0) saturate(100%) invert(31%) sepia(2%) saturate(3085%) hue-rotate(202deg) brightness(111%) contrast(83%)',
+  ink: 'brightness(0) saturate(100%) invert(4%) sepia(6%) saturate(2829%) hue-rotate(201deg) brightness(91%) contrast(88%)',
+} as const;
+
 // Overrides draw.io's own palette variables (see its grapheditor.css) rather than
 // individual selectors, so every panel, menu and dialog follows the design system.
 const EDITOR_CSS = `
@@ -78,6 +86,28 @@ const EDITOR_CSS = `
    auto-height grid row of .geEditor, so hiding it gives its space back to the canvas. */
 .geEditor > .geTabContainer {
   display: none !important;
+}
+
+/* draw.io dims enabled toolbar buttons to 0.65 and only shows them fully on hover, which reads
+   as disabled. Its 0.3 for disabled ones fades the ~1px thin icons into hairlines that look like
+   a lighter icon set, so disabled stays at 0.45 of the muted tint. */
+.geSimple .geToolbarContainer .geButton {
+  filter: ${ICON_FILTER.inkMuted};
+}
+.geSimple .geToolbarContainer .geButton:is(.mxDisabled, .mxDisabled *, [disabled]) {
+  opacity: 0.45;
+}
+.geSimple .geToolbarContainer .geButton:not(.mxDisabled, .mxDisabled *, [disabled]) {
+  opacity: 1;
+}
+.geSimple .geToolbarContainer .geButton:hover:not(.mxDisabled, .mxDisabled *, [disabled]) {
+  filter: ${ICON_FILTER.ink};
+}
+
+/* The filter repaints the zoom box's hard-coded black border too; 30% alpha of ink-muted lands
+   on the line-strong token over the white toolbar. */
+.geSimple .geToolbarContainer .geButton.geZoomInput {
+  border-color: rgb(0 0 0 / 0.3);
 }
 
 ::selection {

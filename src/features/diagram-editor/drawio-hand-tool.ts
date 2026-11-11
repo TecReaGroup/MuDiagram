@@ -5,12 +5,15 @@ export type HandToolTitles = { select: string; hand: string };
 const HAND_MODE_CLASS = 'mu-hand-mode';
 const LEFT_MOUSE_BUTTON = 0;
 
-// Icons are black, like draw.io's own toolbar icons, which its dark mode inverts. Both are drawn
-// at the ~1px line weight of draw.io's "thin" icons so the toggle reads as part of that toolbar.
-// lucide's MousePointer2: Material's arrow_selector_tool has a tail that looks clumsy at this size.
-const SELECT_ICON = toIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1" stroke-linejoin="round"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></svg>');
-// Material Symbols Outlined pan_tool, weight 200.
-const HAND_ICON = toIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M436.62-100q-24.94 0-46.55-11.19-21.61-11.19-36.3-32.35l-245-359.15 8.61-8.39q12.85-12.84 30.39-13.92t32.38 9.31L320-418.54v-339.15q0-8.5 5.76-14.25t14.27-5.75q8.51 0 14.24 5.75t5.73 14.25v416.23L183.54-464.69l203.15 298.23q8.08 12.61 21.31 19.54 13.23 6.92 28.62 6.92H660q42.23 0 71.12-28.88Q760-197.77 760-240v-500q0-8.5 5.76-14.25t14.27-5.75q8.51 0 14.24 5.75T800-740v500q0 58.31-40.85 99.15Q718.31-100 660-100H436.62Zm30.3-400v-337.69q0-8.5 5.76-14.25t14.27-5.75q8.51 0 14.24 5.75t5.73 14.25V-500h-40Zm146.93 0v-297.69q0-8.5 5.75-14.25 5.76-5.75 14.27-5.75t14.25 5.75q5.73 5.75 5.73 14.25V-500h-40Zm-141.7 180Z"/></svg>');
+// NOTE: draw.io's simple-theme toolbar uses its "thin" icons: Material Symbols at the 48px optical
+// size, weight 300 (stroke 2.25/48), drawn at a 24px background size. The toggle must use that same
+// optical size, weight and render size; the 24px optical size draws a bigger, heavier glyph.
+const ICON_RENDER_SIZE = '24px';
+// lucide's MousePointer2 at stroke 1.125/24, i.e. the thin icons' 2.25/48: Material's
+// arrow_selector_tool has a tail that looks clumsy at this size.
+const SELECT_ICON = toIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="1.125" stroke-linejoin="round"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></svg>');
+// Material Symbols Outlined pan_tool, optical size 48, weight 300.
+const HAND_ICON = toIconUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M419.31-70q-25.17 0-48.08-11.65-22.91-11.64-37.15-33.28L82.85-486.08l13.46-10.61q14.31-12.7 33.54-15.54 19.23-2.85 37.93 11.43L300-403.15v-383q0-9.65 6.58-16.17 6.58-6.52 16.31-6.52 9.73 0 16.11 6.52 6.39 6.52 6.39 16.17v469.92L164.08-447.31l208.07 306.85q7.77 12.15 20 18.61 12.24 6.46 27.16 6.46h258q41.07 0 69.19-28.11 28.11-28.12 28.11-69.19v-544.62q0-9.64 6.59-16.16 6.58-6.53 16.3-6.53 9.73 0 16.11 6.53 6.39 6.52 6.39 16.16v544.62q0 59.92-41.39 101.3Q737.23-70 677.31-70h-258Zm39.23-420v-376.15q0-9.65 6.58-16.17 6.58-6.52 16.31-6.52 9.72 0 16.11 6.52 6.38 6.52 6.38 16.17V-490h-45.38Zm158.54 0v-336.15q0-9.65 6.58-16.17 6.58-6.52 16.3-6.52 9.73 0 16.12 6.52 6.38 6.52 6.38 16.17V-490h-45.38ZM469.54-302.69Z"/></svg>');
 
 // Figma-sized: its hand cursor is about 18px with a hairline white rim.
 const CURSOR_SIZE_PX = 18;
@@ -92,6 +95,7 @@ export function installHandTool(editorUi: DrawioEditorUi, titles: HandToolTitles
 
   const toggleButton = frameDocument.createElement('a');
   toggleButton.className = 'geButton';
+  toggleButton.style.backgroundSize = ICON_RENDER_SIZE;
   const renderToggleButton = () => {
     toggleButton.style.backgroundImage = isHandMode ? HAND_ICON : SELECT_ICON;
     toggleButton.title = isHandMode ? titles.hand : titles.select;
