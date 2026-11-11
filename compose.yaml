@@ -1,5 +1,5 @@
 services:
-  app:
+  mudiagram:
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,3 +13,14 @@ services:
       - ./config:/app/config:ro
     environment:
       NODE_ENV: production
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: mudiagram-cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+      # Read from .env; set the tunnel's public hostname service to http://mudiagram:8787 in the Zero Trust dashboard.
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?TUNNEL_TOKEN is required}
+    depends_on:
+      - mudiagram
