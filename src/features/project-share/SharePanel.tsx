@@ -8,6 +8,7 @@ import {
   type Project,
 } from '../../entities/project/project-api';
 import { log, serializeError } from '../../shared/lib/logger';
+import { DESTRUCTIVE_BUTTON_CLASS, OUTLINE_BUTTON_CLASS, PRIMARY_BUTTON_CLASS } from '../../shared/ui/control-class';
 
 const SHARED_FILES: { extension: DiagramFileExtension; label: string }[] = [
   { extension: 'drawio', label: 'Draw.io 源文件' },
@@ -24,10 +25,10 @@ function CopyableLink({ label, url }: { label: string; url: string }) {
   }
   return (
     <div className="space-y-1">
-      <div className="text-xs font-medium text-slate-500">{label}</div>
+      <div className="text-xs font-medium text-foreground/70">{label}</div>
       <div className="flex gap-2">
-        <input readOnly value={url} className="min-w-0 flex-1 rounded border border-slate-300 bg-slate-50 px-2 py-1 font-mono text-xs" />
-        <button type="button" onClick={() => void copyUrl()} className="shrink-0 rounded border border-slate-300 px-2 text-xs hover:bg-slate-50">
+        <input readOnly value={url} className="h-8 min-w-0 flex-1 rounded-lg border border-border-subtle bg-surface-1 px-2.5 font-mono text-[11px] text-muted-foreground outline-none focus:border-ring" />
+        <button type="button" onClick={() => void copyUrl()} className={`${OUTLINE_BUTTON_CLASS} text-xs`}>
           {copied ? '已复制' : '复制'}
         </button>
       </div>
@@ -59,17 +60,17 @@ export function SharePanel({ project, onProjectChange }: SharePanelProps) {
 
   const { shareToken } = project;
   return (
-    <div className="w-96 space-y-4 rounded-lg border border-slate-200 bg-white p-4 shadow-lg">
+    <div className="w-96 max-w-[calc(100vw-24px)] space-y-4 rounded-2xl bg-popover p-4 shadow-pop">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-semibold text-slate-800">分享</div>
-          <div className="text-xs text-slate-500">{shareToken ? '任何拿到链接的人都可以查看和下载' : '当前仅自己可见'}</div>
+          <div className="text-[15px] font-semibold tracking-[-0.01em]">分享</div>
+          <div className="text-xs text-muted-foreground">{shareToken ? '任何拿到链接的人都可以查看和下载' : '当前仅自己可见'}</div>
         </div>
         <button
           type="button"
           disabled={isUpdating}
           onClick={() => void updateShare(shareToken ? disableShare : enableShare)}
-          className={`rounded-md px-3 py-1.5 text-sm disabled:opacity-50 ${shareToken ? 'border border-rose-300 text-rose-600 hover:bg-rose-50' : 'bg-sky-600 text-white hover:bg-sky-700'}`}
+          className={shareToken ? DESTRUCTIVE_BUTTON_CLASS : PRIMARY_BUTTON_CLASS}
         >
           {shareToken ? '停止分享' : '开启分享'}
         </button>
@@ -82,7 +83,7 @@ export function SharePanel({ project, onProjectChange }: SharePanelProps) {
           ))}
         </div>
       )}
-      {failure && <p className="text-xs text-rose-600">{failure}</p>}
+      {failure && <p className="text-xs text-destructive">{failure}</p>}
     </div>
   );
 }

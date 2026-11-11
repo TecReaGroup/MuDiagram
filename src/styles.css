@@ -1,15 +1,157 @@
 @import "tailwindcss";
 
-:root {
-  font-family: system-ui, sans-serif;
-  color: #222222;
-  background: #ffffff;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+/* Design tokens follow next-ai-draw-io: a quiet light table, ink for primary
+   actions, highlighter yellow reserved for what the AI just changed. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: "Instrument Sans", var(--font-cjk), system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --color-canvas: var(--canvas);
+  --color-faint: var(--faint);
+  --color-marker: var(--marker);
+  --color-marker-soft: var(--marker-soft);
+  --color-marker-ink: var(--marker-ink);
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-active: var(--interactive-active);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
+:root {
+  --radius: 0.75rem;
+
+  --canvas: #f4f5f7;
+  --background: #f4f5f7;
+  --foreground: #14181d;
+
+  --card: #ffffff;
+  --card-foreground: #14181d;
+  --popover: #ffffff;
+  --popover-foreground: #14181d;
+
+  --primary: #14181d;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f3f5;
+  --secondary-foreground: #14181d;
+  --muted: #f1f3f5;
+  --muted-foreground: #5d6672;
+  --faint: #687180;
+  --accent: #eef0f3;
+  --accent-foreground: #14181d;
+  --destructive: #c9372c;
+
+  --border: #e4e7eb;
+  --input: #dfe3e8;
+  --ring: #14181d;
+
+  --marker: #ffd84d;
+  --marker-soft: #fff4bf;
+  --marker-ink: #6b5200;
+
+  --surface-0: #ffffff;
+  --surface-1: #f7f8fa;
+  --surface-2: #f1f3f5;
+  --border-subtle: #eceef1;
+  --border-default: #e4e7eb;
+  --interactive-hover: #f1f3f5;
+  --interactive-active: #e7eaee;
+  --success: #1f9e5a;
+  --success-muted: #e3f5ea;
+
+  --shadow-float: 0 1px 2px rgb(20 24 29 / 0.05), 0 10px 30px -8px rgb(20 24 29 / 0.14);
+  --shadow-pop: 0 1px 2px rgb(20 24 29 / 0.06), 0 18px 48px -12px rgb(20 24 29 / 0.22);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --font-cjk: "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Microsoft YaHei";
+
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    margin: 0;
+    min-width: 320px;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection {
+    background: var(--marker-soft);
+    color: inherit;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent) transparent;
+  }
+  .shadow-float {
+    box-shadow: var(--shadow-float);
+  }
+  .shadow-pop {
+    box-shadow: var(--shadow-pop);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes panelIn {
+  from { opacity: 0; transform: translateX(12px) scale(0.985); }
+  to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s var(--ease-out) both;
+}
+.animate-message-in {
+  animation: fadeIn 0.22s var(--ease-out) both;
+}
+.animate-panel-in {
+  animation: panelIn 0.32s var(--ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-message-in,
+  .animate-panel-in {
+    animation: none;
+  }
 }

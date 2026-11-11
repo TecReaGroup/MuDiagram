@@ -1,6 +1,10 @@
+import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { projectDiagramUrl, type Project } from '../../entities/project/project-api';
+import { formatRelativeTime } from '../../shared/lib/relative-time';
+
+const CARD_ACTION_CLASS = 'inline-flex size-7 items-center justify-center rounded-lg bg-card text-muted-foreground shadow-float transition-colors hover:text-foreground';
 
 type ProjectCardProps = {
   project: Project;
@@ -10,6 +14,7 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
   const [hasPreview, setHasPreview] = useState(true);
+  const isShared = project.shareToken !== null;
 
   function promptRename() {
     const name = window.prompt('重命名项目', project.name)?.trim();
@@ -21,31 +26,40 @@ export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
   }
 
   return (
-    <article className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
-      <Link to={`/project/${project.id}`} className="flex h-40 items-center justify-center bg-slate-50">
+    <article className="group relative animate-fade-in overflow-hidden rounded-2xl border border-border bg-card transition-shadow duration-200 hover:shadow-float">
+      <Link
+        to={`/project/${project.id}`}
+        className="flex h-44 items-center justify-center border-b border-border-subtle bg-surface-1 bg-[radial-gradient(var(--input)_1px,transparent_1px)] bg-size-[14px_14px]"
+      >
         {hasPreview ? (
           <img
             src={projectDiagramUrl(project.id, 'svg', project.updatedAt)}
             alt={project.name}
             onError={() => setHasPreview(false)}
-            className="max-h-full max-w-full object-contain p-3"
+            className="max-h-full max-w-full object-contain p-5"
           />
         ) : (
-          <span className="text-xs text-slate-400">空白图表</span>
+          <span className="text-xs text-faint">空白图表</span>
         )}
       </Link>
-      <div className="flex items-start justify-between gap-2 px-3 py-2">
+      <div className="absolute top-2.5 right-2.5 flex gap-1 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        <button type="button" onClick={promptRename} aria-label="重命名" title="重命名" className={CARD_ACTION_CLASS}>
+          <Pencil className="size-3.5" strokeWidth={1.75} />
+        </button>
+        <button type="button" onClick={confirmDelete} aria-label="删除" title="删除" className={`${CARD_ACTION_CLASS} hover:text-destructive`}>
+          <Trash2 className="size-3.5" strokeWidth={1.75} />
+        </button>
+      </div>
+      <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-3.5">
         <div className="min-w-0">
-          <Link to={`/project/${project.id}`} className="block truncate text-sm font-medium text-slate-800 hover:text-sky-700">{project.name}</Link>
-          <div className="text-xs text-slate-400">
-            {new Date(project.updatedAt).toLocaleString()}
-            {project.shareToken && <span className="ml-2 rounded bg-emerald-50 px-1.5 text-emerald-600">已分享</span>}
-          </div>
+          <Link to={`/project/${project.id}`} className="block truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
+            {project.name}
+          </Link>
+          <time dateTime={project.updatedAt} className="mt-0.5 block text-xs text-faint">{formatRelativeTime(project.updatedAt)}</time>
         </div>
-        <div className="flex shrink-0 gap-1 opacity-0 transition group-hover:opacity-100">
-          <button type="button" onClick={promptRename} className="rounded px-1.5 text-xs text-slate-500 hover:bg-slate-100">重命名</button>
-          <button type="button" onClick={confirmDelete} className="rounded px-1.5 text-xs text-rose-500 hover:bg-rose-50">删除</button>
-        </div>
+        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${isShared ? 'bg-success-muted text-success' : 'bg-muted text-muted-foreground'}`}>
+          {isShared ? '公开' : '私有'}
+        </span>
       </div>
     </article>
   );

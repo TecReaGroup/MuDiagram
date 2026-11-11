@@ -14,6 +14,7 @@
     "@ai-sdk/openai": "^4.0.111",
     "@ai-sdk/react": "^4.0.170",
     "ai": "^7.0.166",
+    "lucide-react": "^1.71.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-drawio": "^1.0.7",

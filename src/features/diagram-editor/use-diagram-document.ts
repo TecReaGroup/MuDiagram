@@ -26,6 +26,8 @@ export function useDiagramDocument(projectId: string, initialXml: string, onSave
   const onSavedRef = useRef(onSaved);
   onSavedRef.current = onSaved;
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
+  // draw.io drops load() calls sent before its iframe reports the first load.
+  const [isCanvasReady, setIsCanvasReady] = useState(false);
 
   const exportImage = useCallback((format: ImageExportFormat) => new Promise<string>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
@@ -94,6 +96,7 @@ export function useDiagramDocument(projectId: string, initialXml: string, onSave
   // Its onSave fires for every export with an image instead of XML, so the
   // editor's Save button is recognized from the export's parentEvent instead.
   const embedHandlers = useMemo(() => ({
+    onLoad: () => setIsCanvasReady(true),
     onAutoSave: (event: EventAutoSave) => recordChangeRef.current(event.xml),
     onExport: (event: EventExport) => {
       if (event.message.parentEvent === 'save') {
@@ -106,7 +109,7 @@ export function useDiagramDocument(projectId: string, initialXml: string, onSave
     },
   }), []);
 
-  return { drawioRef, embedHandlers, saveStatus, readXml, replaceXml, saveNow };
+  return { drawioRef, embedHandlers, isCanvasReady, saveStatus, readXml, replaceXml, saveNow };
 }
 
 export type DiagramDocument = ReturnType<typeof useDiagramDocument>;

@@ -10,7 +10,7 @@ server.on('error', error => {
 
 server.listen(environment.port, () => {
   log('info', 'Server', 'Server started', {
-    port: environment.port,
+    url: `http://localhost:${environment.port}`,
     environment: environment.isProduction ? 'production' : 'development',
   });
 });
