@@ -1,4 +1,4 @@
-// NOTE: draw.io runs in a cross-origin iframe, so it cannot read our CSS variables.
+// NOTE: draw.io runs in its own iframe document, so it cannot read our CSS variables.
 // These values mirror the tokens in src/styles.css and must be kept in sync by hand.
 const DESIGN_TOKEN = {
   canvas: '#f6f6f7',
@@ -86,6 +86,8 @@ const EDITOR_CSS = `
 `;
 
 export const DRAWIO_CONFIGURATION = {
+  // NOTE: The AI assistant reads and edits <mxGraphModel> directly, so the XML must never be deflated.
+  compressXml: false,
   css: EDITOR_CSS,
   defaultGridColor: DESIGN_TOKEN.line,
   defaultPageBackgroundColor: DESIGN_TOKEN.surface,

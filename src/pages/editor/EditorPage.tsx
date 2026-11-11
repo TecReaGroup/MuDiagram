@@ -1,14 +1,15 @@
 import { ChevronRight, CloudCheck, Share2, Sparkle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { listFolders, type Folder } from '../../entities/folder/folder-api';
 import { getProject, type Project } from '../../entities/project/project-api';
 import { AiChatPanel } from '../../features/ai-assistant/AiChatPanel';
-import { DiagramCanvas } from '../../features/diagram-editor/DiagramCanvas';
+import { DiagramCanvas, type DiagramCanvasHandle } from '../../features/diagram-editor/DiagramCanvas';
 import { SharePanel } from '../../features/project-share/SharePanel';
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { buttonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
+import { useDismiss } from '../../shared/ui/use-dismiss';
 
 export function EditorPage() {
   const { t } = useI18n();
@@ -16,6 +17,10 @@ export function EditorPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [folder, setFolder] = useState<Folder | null>(null);
   const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
+  const canvasRef = useRef<DiagramCanvasHandle>(null);
+  const shareRootRef = useRef<HTMLDivElement>(null);
+  const closeSharePanel = useCallback(() => setIsSharePanelOpen(false), []);
+  useDismiss(shareRootRef, isSharePanelOpen, closeSharePanel);
   const isShared = project?.shareToken != null;
 
   useEffect(() => {
@@ -57,17 +62,24 @@ export function EditorPage() {
           <span className="hidden sm:inline">{t('editor.saved')}</span>
         </span>
 
-        <div className="relative ml-auto flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setIsSharePanelOpen(open => !open)}
-            aria-expanded={isSharePanelOpen}
-            className={buttonClass('secondary')}
-          >
-            <Share2 />
-            {t('editor.share')}
-            {isShared && <span className="size-1.5 rounded-full bg-success" aria-label={t('editor.isPublic')} />}
-          </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <div ref={shareRootRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setIsSharePanelOpen(open => !open)}
+              aria-expanded={isSharePanelOpen}
+              className={`relative ${buttonClass('secondary')}`}
+            >
+              <Share2 />
+              {t('editor.share')}
+              {isShared && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-success" aria-label={t('editor.isPublic')} />}
+            </button>
+            {isSharePanelOpen && project && (
+              <div className="absolute top-10 right-0 z-30 origin-top-right animate-pop-in">
+                <SharePanel project={project} onProjectChange={setProject} />
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => setIsAiPanelOpen(open => !open)}
@@ -77,23 +89,17 @@ export function EditorPage() {
             <Sparkle />
             {t('ai.assistant')}
           </button>
-          {isSharePanelOpen && (
-            <div className="absolute top-10 right-0 z-30 origin-top-right animate-pop-in">
-              <SharePanel initiallyShared={isShared} />
-            </div>
-          )}
         </div>
       </header>
 
       <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         <div className={`${SURFACE_CARD_CLASS} min-w-0 flex-1 overflow-hidden`}>
-          <DiagramCanvas key={projectId} projectId={projectId} />
+          <DiagramCanvas key={projectId} ref={canvasRef} projectId={projectId} />
         </div>
-        {isAiPanelOpen && (
-          <div className="w-[380px] shrink-0 animate-panel-in max-lg:fixed max-lg:inset-y-2 max-lg:right-2 max-lg:z-20 max-lg:w-[min(380px,calc(100vw-16px))]">
-            <AiChatPanel onClose={() => setIsAiPanelOpen(false)} />
-          </div>
-        )}
+        {/* Hidden rather than unmounted, so closing the panel keeps the conversation. */}
+        <div className={`${isAiPanelOpen ? '' : 'hidden'} w-[380px] shrink-0 animate-panel-in max-lg:fixed max-lg:inset-y-2 max-lg:right-2 max-lg:z-20 max-lg:w-[min(380px,calc(100vw-16px))]`}>
+          <AiChatPanel key={projectId} projectId={projectId} canvasRef={canvasRef} onClose={() => setIsAiPanelOpen(false)} />
+        </div>
       </div>
     </div>
   );

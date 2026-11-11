@@ -1,3 +1,7 @@
+[server]
+# Port the API backend listens on; the Vite dev server proxies /api here
+port = 8787
+
 [storage]
 # Directory holding one folder per project (relative to the repository root)
 project_root = "./backend/data/project"

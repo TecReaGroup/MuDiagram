@@ -4,7 +4,6 @@ import { LanguageProvider } from '../shared/i18n/language-context';
 import { EditorPage } from '../pages/editor/EditorPage';
 import { LibraryLayout } from '../pages/library/LibraryLayout';
 import { ProjectListPage } from '../pages/library/ProjectListPage';
-import { SharePage } from '../pages/share/SharePage';
 import { TrashPage } from '../pages/trash/TrashPage';
 
 const router = createBrowserRouter([
@@ -17,9 +16,7 @@ const router = createBrowserRouter([
       { path: 'trash', element: <TrashPage /> },
     ],
   },
-  { path: '/project/:projectId', element: <EditorPage /> },
-  { path: '/share/:shareToken', element: <SharePage /> },
-]);
+  { path: '/project/:projectId', element: <EditorPage /> },]);
 
 export function App() {
   return (

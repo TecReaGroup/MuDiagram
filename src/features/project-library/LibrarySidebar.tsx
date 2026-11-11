@@ -6,8 +6,11 @@ import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { buttonClass, FOCUS_RING, iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
+import { NavItemList } from '../../shared/ui/NavItemList';
 import { FolderNavItem } from './FolderNavItem';
 import type { ProjectLibrary } from './use-project-library';
+
+const MAX_VISIBLE_FOLDERS = 5;
 
 type LibrarySidebarProps = {
   library: ProjectLibrary;
@@ -70,7 +73,7 @@ export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: 
             <Plus />
           </button>
         </div>
-        <nav id="folder-list" hidden={!isFolderListOpen} className="mt-1 space-y-0.5">
+        <NavItemList id="folder-list" hidden={!isFolderListOpen} maxVisibleItems={MAX_VISIBLE_FOLDERS} className="mt-1">
           {library.folders.map(folder => (
             <FolderNavItem
               key={folder.id}
@@ -95,7 +98,7 @@ export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: 
           {library.folders.length === 0 && !isNamingNewFolder && (
             <p className="px-3 py-1.5 text-xs text-ink-faint">{t('folder.empty')}</p>
           )}
-        </nav>
+        </NavItemList>
       </section>
       <button type="button" onClick={onCreateProject} disabled={isCreatingProject} className={`${buttonClass('primary', 'xl')} mt-auto w-full`}>
         <Plus />

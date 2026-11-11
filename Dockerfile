@@ -16,7 +16,6 @@ FROM node:22-alpine3.23 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=8787
 
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force

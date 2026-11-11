@@ -1,6 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
+import { readFileSync } from 'node:fs';
+import { parse } from 'smol-toml';
+
+// The backend owns config.toml; the dev proxy reads the same port so the two never drift.
+const BACKEND_PORT = (parse(readFileSync('config/config.toml', 'utf8')).server as { port: number }).port;
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
@@ -15,7 +20,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api': 'http://localhost:8787',
+      '/api': `http://localhost:${BACKEND_PORT}`,
     },
   },
 });

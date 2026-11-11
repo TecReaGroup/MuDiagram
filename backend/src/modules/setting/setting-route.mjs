@@ -1,18 +1,13 @@
 import { log } from '../../infrastructure/logger.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
 import { readJsonBody, sendJson } from '../../shared/http.mjs';
+import { readAiSetting, toPublicAiSetting } from './ai-setting.mjs';
 import { readSetting, updateSetting } from './setting-store.mjs';
 
 const UI_LANGUAGES = ['zh-CN', 'en-US'];
 
-const AI_SETTING_FIELDS = ['model', 'baseUrl', 'apiKeyEnv'];
-
-function readAiSetting(ai) {
-  if (!ai || typeof ai !== 'object') throw new HttpError(400, 'ai must be an object');
-  return Object.fromEntries(AI_SETTING_FIELDS.map(field => {
-    if (typeof ai[field] !== 'string') throw new HttpError(400, `ai.${field} must be a string`);
-    return [field, ai[field].trim()];
-  }));
+function toPublicSetting(setting) {
+  return { ...setting, ai: toPublicAiSetting(setting.ai) };
 }
 
 function readSettingChanges(body) {
@@ -32,7 +27,7 @@ export const settingRoutes = [
   {
     method: 'GET',
     path: new RegExp('^/api/setting$'),
-    handle: async (request, response) => sendJson(response, 200, await readSetting()),
+    handle: async (request, response) => sendJson(response, 200, toPublicSetting(await readSetting())),
   },
   {
     method: 'PATCH',
@@ -40,8 +35,8 @@ export const settingRoutes = [
     handle: async (request, response) => {
       const changes = readSettingChanges(await readJsonBody(request));
       const setting = await updateSetting(changes);
-      log('info', 'Setting', 'Setting updated', changes);
-      sendJson(response, 200, setting);
+      log('info', 'Setting', 'Setting updated', { fields: Object.keys(changes), aiFields: Object.keys(changes.ai ?? {}) });
+      sendJson(response, 200, toPublicSetting(setting));
     },
   },
 ];

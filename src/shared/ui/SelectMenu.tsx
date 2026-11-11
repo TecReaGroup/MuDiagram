@@ -47,7 +47,7 @@ export function SelectMenu<T extends string | null>({ value, options, onChange }
       </button>
 
       {isOpen && (
-        <div role="menu" className={`${MENU_PANEL_CLASS} scrollbar-thin absolute inset-x-0 top-full mt-1.5 max-h-56 origin-top overflow-y-auto`}>
+        <div role="menu" className={`${MENU_PANEL_CLASS} scrollbar-subtle absolute inset-x-0 top-full mt-1.5 max-h-56 origin-top overflow-y-auto`}>
           {options.map(option => {
             const isSelected = option.value === value;
             return (

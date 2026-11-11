@@ -4,8 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "drawio": "node script/fetch-drawio.mjs",
+    "predev": "npm run drawio",
     "dev": "vite",
     "backend": "node --watch backend/server.mjs",
+    "prebuild": "npm run drawio",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

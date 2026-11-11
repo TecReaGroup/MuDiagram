@@ -7,6 +7,7 @@ Dockerfile
 compose.yaml
 node_modules
 dist
+public/drawio
 output
 temp
 backend/data

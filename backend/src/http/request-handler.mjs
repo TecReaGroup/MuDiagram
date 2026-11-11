@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { log, serializeError } from '../infrastructure/logger.mjs';
 import { aiRoutes } from '../modules/ai/ai-route.mjs';
+import { chatRoutes } from '../modules/chat/chat-route.mjs';
 import { folderRoutes } from '../modules/folder/folder-route.mjs';
 import { projectRoutes } from '../modules/project/project-route.mjs';
 import { trashRoutes } from '../modules/project/trash-route.mjs';
@@ -11,7 +12,7 @@ import { HttpError } from '../shared/http-error.mjs';
 import { sendJson } from '../shared/http.mjs';
 import { streamFrontend } from './static-handler.mjs';
 
-const API_ROUTES = [...projectRoutes, ...trashRoutes, ...folderRoutes, ...shareRoutes, ...settingRoutes, ...aiRoutes];
+const API_ROUTES = [...projectRoutes, ...trashRoutes, ...folderRoutes, ...shareRoutes, ...settingRoutes, ...aiRoutes, ...chatRoutes];
 
 function matchApiRoute(method, pathname) {
   for (const route of API_ROUTES) {
@@ -40,8 +41,8 @@ async function routeRequest(request, response, url) {
   }
 
   if (request.method === 'GET') {
-    if (await streamFrontend(response, url.pathname)) return;
-    if (!extname(url.pathname) && await streamFrontend(response, '/')) return;
+    if (await streamFrontend(request, response, url.pathname)) return;
+    if (!extname(url.pathname) && await streamFrontend(request, response, '/')) return;
   }
 
   sendJson(response, 404, { error: 'Route not found' });

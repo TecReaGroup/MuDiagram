@@ -14,6 +14,7 @@ function readSection(config, name) {
 
 function loadAppConfig() {
   const config = parse(readFileSync(CONFIG_FILE, 'utf8'));
+  const server = readSection(config, 'server');
   const storage = readSection(config, 'storage');
   const trash = readSection(config, 'trash');
 
@@ -22,7 +23,15 @@ function loadAppConfig() {
     throw new Error('config.toml: trash.retention_days must be a positive number');
   }
 
+  const port = Number(server.port);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error('config.toml: server.port must be an integer between 1 and 65535');
+  }
+
   return {
+    server: {
+      port,
+    },
     storage: {
       projectRoot: resolve(REPOSITORY_ROOT, String(storage.project_root)),
       folderFile: resolve(REPOSITORY_ROOT, String(storage.folder_file)),

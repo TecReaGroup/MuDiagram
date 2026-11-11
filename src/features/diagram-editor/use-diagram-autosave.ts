@@ -21,7 +21,8 @@ export function useDiagramAutosave(projectId: string, editorRef: RefObject<DrawI
 
   const exportSnapshot = useCallback((format: SnapshotFormat) => new Promise<EventExport>(resolve => {
     pendingExportRef.current.set(format, resolve);
-    editorRef.current?.exportDiagram({ format });
+    // Shared renditions are embedded in third-party pages, so they must not carry a page background.
+    editorRef.current?.exportDiagram({ format, transparent: true });
   }), [editorRef]);
 
   const saveLatestSnapshot = useCallback(async () => {
@@ -38,12 +39,14 @@ export function useDiagramAutosave(projectId: string, editorRef: RefObject<DrawI
         await saveDiagram(projectId, { xml: svgExport.xml, svg: svgExport.data, png: pngExport.data });
         log('debug', 'DiagramEditor', 'Diagram autosaved', { projectId });
       } while (hasUnsavedChangeRef.current);
+      // draw.io blocks page unload with its own "unsaved changes" prompt until told the diagram is saved.
+      editorRef.current?.status({ message: '', modified: false });
     } catch (error) {
       log('error', 'DiagramEditor', 'Diagram autosave failed', { projectId, ...serializeError(error) });
     } finally {
       isSavingRef.current = false;
     }
-  }, [exportSnapshot, projectId]);
+  }, [editorRef, exportSnapshot, projectId]);
 
   const handleAutoSave = useCallback(() => {
     window.clearTimeout(debounceTimerRef.current);

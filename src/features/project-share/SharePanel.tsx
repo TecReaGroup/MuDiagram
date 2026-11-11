@@ -1,19 +1,23 @@
-import { Check, Copy, FileCode, Globe, Image as ImageIcon, Link2, Lock } from 'lucide-react';
+import { Check, Copy, FileCode, Globe, Image as ImageIcon, Lock } from 'lucide-react';
 import { useState, type ComponentType } from 'react';
-import { SAMPLE_SHARE_TOKEN } from '../../entities/project/sample-project';
+import { shareProject, unshareProject, type Project } from '../../entities/project/project-api';
 import { useI18n } from '../../shared/i18n/language-context';
 import type { MessageKey } from '../../shared/i18n/message';
+import { log, serializeError } from '../../shared/lib/logger';
 import { iconButtonClass } from '../../shared/ui/control-class';
 import { Switch } from '../../shared/ui/Switch';
 
 const COPIED_FEEDBACK_MS = 1500;
 
-const SHARED_LINKS: { labelKey: MessageKey; path: string; Icon: ComponentType<{ className?: string }> }[] = [
-  { labelKey: 'share.page', path: `/share/${SAMPLE_SHARE_TOKEN}`, Icon: Link2 },
-  { labelKey: 'share.drawioFile', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.drawio`, Icon: FileCode },
-  { labelKey: 'share.svgImage', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.svg`, Icon: ImageIcon },
-  { labelKey: 'share.pngImage', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.png`, Icon: ImageIcon },
+const SHARED_FILES: { labelKey: MessageKey; extension: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { labelKey: 'share.drawioFile', extension: 'drawio', Icon: FileCode },
+  { labelKey: 'share.svgImage', extension: 'svg', Icon: ImageIcon },
+  { labelKey: 'share.pngImage', extension: 'png', Icon: ImageIcon },
 ];
+
+function sharedFileUrl(shareToken: string, extension: string): string {
+  return `${window.location.origin}/api/share/${shareToken}/diagram.${extension}`;
+}
 
 function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: ComponentType<{ className?: string }> }) {
   const { t } = useI18n();
@@ -39,10 +43,29 @@ function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: 
   );
 }
 
-export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
+type SharePanelProps = {
+  project: Project;
+  onProjectChange: (project: Project) => void;
+};
+
+export function SharePanel({ project, onProjectChange }: SharePanelProps) {
   const { t } = useI18n();
-  const [isShared, setIsShared] = useState(initiallyShared);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const { shareToken } = project;
+  const isShared = shareToken !== null;
   const VisibilityIcon = isShared ? Globe : Lock;
+
+  const changeVisibility = async (shouldShare: boolean) => {
+    if (isUpdating) return;
+    setIsUpdating(true);
+    try {
+      onProjectChange(await (shouldShare ? shareProject : unshareProject)(project.id));
+    } catch (error) {
+      log('error', 'ProjectShare', 'Change share visibility failed', { projectId: project.id, shouldShare, ...serializeError(error) });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="w-[360px] max-w-[calc(100vw-24px)] rounded-xl bg-surface p-1.5 shadow-pop">
@@ -54,11 +77,13 @@ export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
           <div className="text-[13px] font-semibold">{t('share.public')}</div>
           <div className="text-xs text-ink-muted">{t(isShared ? 'share.publicHint' : 'share.privateHint')}</div>
         </div>
-        <Switch checked={isShared} label={t('share.public')} onChange={setIsShared} />
+        <Switch checked={isShared} label={t('share.public')} onChange={shouldShare => void changeVisibility(shouldShare)} />
       </div>
-      {isShared && (
+      {shareToken !== null && (
         <div className="animate-fade-in space-y-px border-t border-line px-0.5 pt-1.5 pb-0.5">
-          {SHARED_LINKS.map(link => <CopyableLink key={link.path} label={t(link.labelKey)}Icon={link.Icon} url={`${window.location.origin}${link.path}`} />)}
+          {SHARED_FILES.map(file => (
+            <CopyableLink key={file.extension} label={t(file.labelKey)} Icon={file.Icon} url={sharedFileUrl(shareToken, file.extension)} />
+          ))}
         </div>
       )}
     </div>

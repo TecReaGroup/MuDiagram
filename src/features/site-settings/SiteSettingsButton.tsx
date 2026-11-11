@@ -55,7 +55,7 @@ export function SiteSettingsButton() {
             </nav>
           </aside>
 
-          <section className="relative min-h-0 flex-1 overflow-y-auto px-6 py-8 scrollbar-thin sm:px-14 sm:py-14">
+          <section className="relative min-h-0 flex-1 overflow-y-auto px-6 py-8 scrollbar-subtle sm:px-14 sm:py-14">
             <button type="button" onClick={() => dialogRef.current?.close()} aria-label={t('common.close')} className={`${iconButtonClass()} absolute top-5 right-5`}>
               <X />
             </button>

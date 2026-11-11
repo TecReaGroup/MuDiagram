@@ -1,5 +1,6 @@
 import { createApp } from './src/app.mjs';
 import { environment } from './src/config/environment.mjs';
+import { appConfig } from './src/config/app-config.mjs';
 import { log, serializeError } from './src/infrastructure/logger.mjs';
 import { startTrashPurgeSchedule } from './src/modules/project/trash-purge.mjs';
 
@@ -9,9 +10,9 @@ server.on('error', error => {
   process.exitCode = 1;
 });
 
-server.listen(environment.port, () => {
+server.listen(appConfig.server.port, () => {
   log('info', 'Server', 'Server started', {
-    url: `http://localhost:${environment.port}`,
+    url: `http://localhost:${appConfig.server.port}`,
     environment: environment.isProduction ? 'production' : 'development',
   });
   startTrashPurgeSchedule();

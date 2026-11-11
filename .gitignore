@@ -3,13 +3,14 @@ node_modules/
 
 # Build output and caches
 dist/
+# draw.io web app, installed by script/fetch-drawio.mjs
+public/drawio/
 *.tsbuildinfo
 .vite/
 
 # Local environment files
 .env
 .env.*
-!.env.example
 
 # Logs
 *.log

@@ -91,9 +91,32 @@
   }
 }
 
-@utility scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: rgb(23 23 28 / 0.16) transparent;
+/*
+ * Chromium ignores ::-webkit-scrollbar once scrollbar-width/color is set, and only the
+ * pseudo-elements can drop the arrow buttons, so the standard properties are Firefox-only.
+ */
+@utility scrollbar-subtle {
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  &::-webkit-scrollbar-button {
+    display: none;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: rgb(23 23 28 / 0.16);
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgb(23 23 28 / 0.28);
+  }
+  @supports (-moz-appearance: none) {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(23 23 28 / 0.16) transparent;
+  }
 }
 
 @utility dot-grid {

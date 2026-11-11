@@ -20,12 +20,12 @@ const projectRoot = appConfig.storage.projectRoot;
 const trashRetentionMs = appConfig.trash.retentionDays * DAY_MS;
 const projectLocks = new Map();
 
-function projectDirectory(projectId) {
+export function projectDirectory(projectId) {
   return join(projectRoot, projectId);
 }
 
 // Readers never see a half-written file: write beside it, then rename over it.
-async function writeFileAtomically(filePath, content) {
+export async function writeFileAtomically(filePath, content) {
   const temporaryPath = `${filePath}.${randomUUID()}.tmp`;
   await writeFile(temporaryPath, content);
   await rename(temporaryPath, filePath);

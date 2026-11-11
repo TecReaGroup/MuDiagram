@@ -1,19 +1,16 @@
-import { ArrowUp, Check, CircleExclamationPoint, LoaderCircle, SquarePen, X } from 'lucide-react';
-import { useState, type FormEvent } from 'react';
+import { ArrowUp, Check, CircleExclamationPoint, LoaderCircle, Square, SquarePen, X } from 'lucide-react';
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
-import { FIELD_FOCUS_CLASS, iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
+import { FIELD_FOCUS_CLASS, FOCUS_RING, iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
+import type { DiagramCanvasHandle } from '../diagram-editor/DiagramCanvas';
+import type { DiagramCheckpoints } from './chat-history-api';
+import { ChatHistoryMenu } from './ChatHistoryMenu';
+import { CheckpointPreviewModal } from './CheckpointPreviewModal';
+import { useDiagramChat, type DiagramChatMessage } from './use-diagram-chat';
 
 type ToolStatus = 'done' | 'failed' | 'running';
-
-type SampleMessage =
-  | { id: string; role: 'user'; text: string }
-  | { id: string; role: 'assistant'; text: string; toolStatus: ToolStatus };
-
-const SAMPLE_MESSAGES: SampleMessage[] = [
-  { id: '1', role: 'user', text: '画一个电商系统的微服务架构，包含网关、订单、库存、支付服务和 MySQL、Redis、Kafka' },
-  { id: '2', role: 'assistant', text: '已生成架构图：API 网关后接订单、库存、支付三个服务，服务间通过 Kafka 异步通信，订单和库存共用 MySQL，Redis 做缓存。', toolStatus: 'done' },
-];
+type MessagePart = DiagramChatMessage['parts'][number];
 
 const TOOL_STATUS_STYLES = {
   done: { labelKey: 'ai.toolDone', Icon: Check, className: 'bg-brand-soft text-brand-ink' },
@@ -21,26 +18,131 @@ const TOOL_STATUS_STYLES = {
   running: { labelKey: 'ai.toolRunning', Icon: LoaderCircle, className: 'bg-sunken text-ink-muted [&_svg]:animate-spin' },
 } as const;
 
-function ToolStatusChip({ status }: { status: ToolStatus }) {
+const SEND_BUTTON_CLASS = 'inline-flex size-7 items-center justify-center rounded-lg bg-ink text-white transition-[background-color,opacity] hover:bg-ink/85 disabled:bg-hover disabled:text-ink-faint';
+
+function ToolStatusChip({ status, detail }: { status: ToolStatus; detail?: string }) {
   const { t } = useI18n();
   const { labelKey, Icon, className } = TOOL_STATUS_STYLES[status];
   return (
-    <span className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium ${className}`}>
+    <span title={detail} className={`inline-flex h-6 w-fit items-center gap-1 rounded-md px-2 text-xs font-medium ${className}`}>
       <Icon className="size-3.5" />
       {t(labelKey)}
     </span>
   );
 }
 
-export function AiChatPanel({ onClose }: { onClose: () => void }) {
+/** The "updated" chip of an applied call, opening the diagram that call produced. */
+function CheckpointChip({ onPreview }: { onPreview: () => void }) {
+  const { t } = useI18n();
+  const { labelKey, Icon, className } = TOOL_STATUS_STYLES.done;
+  return (
+    <button
+      type="button"
+      onClick={onPreview}
+      title={t('ai.previewCheckpoint')}
+      className={`group inline-flex h-6 w-fit items-center gap-1 rounded-md px-2 text-xs font-medium transition-colors hover:bg-brand-soft/70 ${FOCUS_RING} ${className}`}
+    >
+      <Icon className="size-3.5" />
+      {t(labelKey)}
+      <span className="ml-1 inline-flex items-center gap-1.5 text-brand-ink/70 group-hover:text-brand-ink">
+        <span aria-hidden className="text-base leading-none">·</span>
+        {t('ai.previewCheckpoint')}
+      </span>
+    </button>
+  );
+}
+
+type AssistantPartProps = {
+  part: MessagePart;
+  checkpoints: DiagramCheckpoints;
+  onPreviewCheckpoint: (checkpointXml: string) => void;
+};
+
+function AssistantPart({ part, checkpoints, onPreviewCheckpoint }: AssistantPartProps) {
+  switch (part.type) {
+    case 'text':
+      return <p className="whitespace-pre-wrap wrap-break-word">{part.text}</p>;
+    case 'tool-display_diagram':
+    case 'tool-edit_diagram': {
+      const checkpointXml = checkpoints[part.toolCallId];
+      if (part.state === 'output-available' && checkpointXml) {
+        return <CheckpointChip onPreview={() => onPreviewCheckpoint(checkpointXml)} />;
+      }
+      if (part.state === 'output-available') return <ToolStatusChip status="done" />;
+      if (part.state === 'output-error') return <ToolStatusChip status="failed" detail={part.errorText} />;
+      return <ToolStatusChip status="running" />;
+    }
+    default:
+      return null;
+  }
+}
+
+type ChatMessageProps = Omit<AssistantPartProps, 'part'> & { message: DiagramChatMessage };
+
+function ChatMessage({ message, ...checkpointProps }: ChatMessageProps) {
+  if (message.role === 'user') {
+    const text = message.parts.map(part => part.type === 'text' ? part.text : '').join('');
+    return (
+      <div className="ml-auto w-fit max-w-[85%] animate-fade-in rounded-2xl rounded-tr-md bg-sunken px-3.5 py-2">
+        <p className="whitespace-pre-wrap wrap-break-word">{text}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="flex animate-fade-in gap-2.5">
+      <BrandMark className="mt-0.5 size-5" />
+      <div className="flex min-w-0 flex-col gap-2">
+        {message.parts.map((part, index) => <AssistantPart key={index} part={part} {...checkpointProps} />)}
+      </div>
+    </div>
+  );
+}
+
+type AiChatPanelProps = {
+  projectId: string;
+  canvasRef: RefObject<DiagramCanvasHandle | null>;
+  onClose: () => void;
+};
+
+export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps) {
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
+  const [previewedCheckpointXml, setPreviewedCheckpointXml] = useState<string | null>(null);
+  const { chatId, messages, checkpoints, error, isBusy, sendText, stop, startNewChat, openChat, deleteChat } = useDiagramChat(canvasRef, projectId);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isWaitingForReply = isBusy && messages[messages.length - 1]?.role === 'user';
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
+  }, [messages, error]);
+
+  const submitDraft = (event: FormEvent) => {
+    event.preventDefault();
+    const text = draft.trim();
+    if (!text || isBusy) return;
+    void sendText(text);
+    setDraft('');
+  };
+
+  const submitOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    // isComposing: Enter that confirms an IME candidate (e.g. Chinese input) must not send.
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
+    event.preventDefault();
+    event.currentTarget.form?.requestSubmit();
+  };
 
   return (
-    <aside className={`${SURFACE_CARD_CLASS} flex h-full w-full flex-col max-lg:shadow-pop`}>
+    <aside className={`${SURFACE_CARD_CLASS} relative flex h-full w-full flex-col max-lg:shadow-pop`}>
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line pr-2 pl-4">
         <span className="flex-1 text-[13px] font-semibold">{t('ai.assistant')}</span>
-        <button type="button" aria-label={t('ai.newChat')} title={t('ai.newChat')} className={iconButtonClass()}>
+        <ChatHistoryMenu
+          projectId={projectId}
+          currentChatId={chatId}
+          isDisabled={isBusy}
+          onOpenChat={openChat}
+          onDeleteChat={deleteChat}
+        />
+        <button type="button" onClick={startNewChat} aria-label={t('ai.newChat')} title={t('ai.newChat')} className={iconButtonClass()}>
           <SquarePen />
         </button>
         <button type="button" onClick={onClose} aria-label={t('common.close')} title={t('common.close')} className={iconButtonClass()}>
@@ -48,45 +150,52 @@ export function AiChatPanel({ onClose }: { onClose: () => void }) {
         </button>
       </header>
 
-      <div className="scrollbar-thin flex-1 space-y-5 overflow-y-auto px-4 py-5 text-[13.5px] leading-relaxed">
-        {SAMPLE_MESSAGES.map(message => message.role === 'user' ? (
-          <div key={message.id} className="ml-auto w-fit max-w-[85%] animate-fade-in rounded-2xl rounded-tr-md bg-sunken px-3.5 py-2">
-            <p className="whitespace-pre-wrap wrap-break-word">{message.text}</p>
-          </div>
-        ) : (
-          <div key={message.id} className="flex animate-fade-in gap-2.5">
-            <BrandMark className="mt-0.5 size-5" />
-            <div className="min-w-0 space-y-2">
-              <ToolStatusChip status={message.toolStatus} />
-              <p className="whitespace-pre-wrap wrap-break-word">{message.text}</p>
-            </div>
-          </div>
+      <div ref={scrollRef} className="scrollbar-subtle flex-1 space-y-5 overflow-y-auto px-4 py-5 text-[13.5px] leading-relaxed">
+        {messages.length === 0 && (
+          <p className="px-4 pt-8 text-center text-[13px] text-ink-faint">{t('ai.emptyHint')}</p>
+        )}
+        {messages.map(message => (
+          <ChatMessage key={message.id} message={message} checkpoints={checkpoints} onPreviewCheckpoint={setPreviewedCheckpointXml} />
         ))}
+        {isWaitingForReply && (
+          <div className="flex animate-fade-in items-center gap-2.5 text-ink-faint">
+            <BrandMark className="size-5" />
+            <LoaderCircle className="size-4 animate-spin" aria-label={t('ai.thinking')} />
+          </div>
+        )}
+        {error && (
+          <p className="animate-fade-in rounded-lg bg-danger-soft px-3 py-2 text-[13px] wrap-break-word text-danger">{error.message}</p>
+        )}
       </div>
 
-      <form
-        onSubmit={(event: FormEvent) => event.preventDefault()}
-        className={`${SURFACE_CARD_CLASS} ${FIELD_FOCUS_CLASS} m-2.5 mt-0`}
-      >
+      <form onSubmit={submitDraft} className={`${SURFACE_CARD_CLASS} ${FIELD_FOCUS_CLASS} m-2.5 mt-0`}>
         <textarea
           value={draft}
           onChange={event => setDraft(event.target.value)}
+          onKeyDown={submitOnEnter}
           rows={2}
           placeholder={t('ai.inputPlaceholder')}
-          className="scrollbar-thin block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-[13.5px] text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
+          className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-[13.5px] text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
         />
         <div className="flex items-center justify-between py-1.5 pr-1.5 pl-3">
           <span className="text-[11px] text-ink-faint">{t('ai.inputHint')}</span>
-          <button
-            type="submit"
-            disabled={!draft.trim()}
-            aria-label={t('ai.send')}
-            className="inline-flex size-7 items-center justify-center rounded-lg bg-ink text-white transition-[background-color,opacity] hover:bg-ink/85 disabled:bg-hover disabled:text-ink-faint"
-          >
-            <ArrowUp className="size-4" />
-          </button>
+          {isBusy ? (
+            <button type="button" onClick={() => void stop()} aria-label={t('ai.stop')} title={t('ai.stop')} className={SEND_BUTTON_CLASS}>
+              <Square className="size-3 fill-current" />
+            </button>
+          ) : (
+            <button type="submit" disabled={!draft.trim()} aria-label={t('ai.send')} className={SEND_BUTTON_CLASS}>
+              <ArrowUp className="size-4" />
+            </button>
+          )}
         </div>
       </form>
+
+      <CheckpointPreviewModal
+        checkpointXml={previewedCheckpointXml}
+        onClose={() => setPreviewedCheckpointXml(null)}
+        onRestore={checkpointXml => canvasRef.current?.loadXml(checkpointXml)}
+      />
     </aside>
   );
 }
