@@ -1,52 +1,23 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { projectDiagramUrl, type Project } from '../../entities/project/project-api';
-import { formatRelativeTime } from '../../shared/lib/relative-time';
+import type { ProjectSummary } from '../../entities/project/sample-project';
 
 const CARD_ACTION_CLASS = 'inline-flex size-7 items-center justify-center rounded-lg bg-card text-muted-foreground shadow-float transition-colors hover:text-foreground';
 
-type ProjectCardProps = {
-  project: Project;
-  onRename: (project: Project, name: string) => void;
-  onDelete: (project: Project) => void;
-};
-
-export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
-  const [hasPreview, setHasPreview] = useState(true);
-  const isShared = project.shareToken !== null;
-
-  function promptRename() {
-    const name = window.prompt('重命名项目', project.name)?.trim();
-    if (name && name !== project.name) onRename(project, name);
-  }
-
-  function confirmDelete() {
-    if (window.confirm(`删除项目「${project.name}」？此操作无法撤销。`)) onDelete(project);
-  }
-
+export function ProjectCard({ project }: { project: ProjectSummary }) {
   return (
     <article className="group relative animate-fade-in overflow-hidden rounded-2xl border border-border bg-card transition-shadow duration-200 hover:shadow-float">
       <Link
         to={`/project/${project.id}`}
         className="flex h-44 items-center justify-center border-b border-border-subtle bg-surface-1 bg-[radial-gradient(var(--input)_1px,transparent_1px)] bg-size-[14px_14px]"
       >
-        {hasPreview ? (
-          <img
-            src={projectDiagramUrl(project.id, 'svg', project.updatedAt)}
-            alt={project.name}
-            onError={() => setHasPreview(false)}
-            className="max-h-full max-w-full object-contain p-5"
-          />
-        ) : (
-          <span className="text-xs text-faint">空白图表</span>
-        )}
+        <span className="text-xs text-faint">图表预览</span>
       </Link>
       <div className="absolute top-2.5 right-2.5 flex gap-1 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-        <button type="button" onClick={promptRename} aria-label="重命名" title="重命名" className={CARD_ACTION_CLASS}>
+        <button type="button" aria-label="重命名" title="重命名" className={CARD_ACTION_CLASS}>
           <Pencil className="size-3.5" strokeWidth={1.75} />
         </button>
-        <button type="button" onClick={confirmDelete} aria-label="删除" title="删除" className={`${CARD_ACTION_CLASS} hover:text-destructive`}>
+        <button type="button" aria-label="删除" title="删除" className={`${CARD_ACTION_CLASS} hover:text-destructive`}>
           <Trash2 className="size-3.5" strokeWidth={1.75} />
         </button>
       </div>
@@ -55,10 +26,10 @@ export function ProjectCard({ project, onRename, onDelete }: ProjectCardProps) {
           <Link to={`/project/${project.id}`} className="block truncate text-[15px] font-semibold tracking-[-0.01em] text-foreground">
             {project.name}
           </Link>
-          <time dateTime={project.updatedAt} className="mt-0.5 block text-xs text-faint">{formatRelativeTime(project.updatedAt)}</time>
+          <span className="mt-0.5 block text-xs text-faint">{project.updatedLabel}</span>
         </div>
-        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${isShared ? 'bg-success-muted text-success' : 'bg-muted text-muted-foreground'}`}>
-          {isShared ? '公开' : '私有'}
+        <span className={`mt-0.5 shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${project.isShared ? 'bg-success-muted text-success' : 'bg-muted text-muted-foreground'}`}>
+          {project.isShared ? '公开' : '私有'}
         </span>
       </div>
     </article>
