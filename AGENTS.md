@@ -21,6 +21,7 @@
 12. 对于给出的文件路径需要给出 [file_name](file_path:column_number) 的链接，方便直接跳转到对应的文件位置，注意前后空格
 13. 注意 .gitignore 的更新和 .gitkeep 的使用
 14. 不要运行 make install 什么的，依赖什么的我自行安装，除非明确要求
+15. 注意设计系统规范，以及 widget 复用
 
 ---
 

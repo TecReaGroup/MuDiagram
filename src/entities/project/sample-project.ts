@@ -19,5 +19,5 @@ export const SAMPLE_PROJECTS: ProjectSummary[] = [
 export const SAMPLE_SHARE_TOKEN = 'sample-share-token';
 
 export function findSampleProject(projectId: string): ProjectSummary {
-  return SAMPLE_PROJECTS.find(project => project.id === projectId) ?? { id: projectId, name: '未命名项目', updatedLabel: '刚刚', isShared: false };
+  return SAMPLE_PROJECTS.find(project => project.id === projectId) ?? { id: projectId, name: '未命名图表', updatedLabel: '刚刚', isShared: false };
 }

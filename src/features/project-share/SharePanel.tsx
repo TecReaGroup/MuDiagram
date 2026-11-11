@@ -1,43 +1,68 @@
-import { useState } from 'react';
+import { Check, Copy, FileCode, Globe, Image as ImageIcon, Link2, Lock } from 'lucide-react';
+import { useState, type ComponentType } from 'react';
 import { SAMPLE_SHARE_TOKEN } from '../../entities/project/sample-project';
-import { DESTRUCTIVE_BUTTON_CLASS, OUTLINE_BUTTON_CLASS, PRIMARY_BUTTON_CLASS } from '../../shared/ui/control-class';
+import { FOCUS_RING, iconButtonClass } from '../../shared/ui/control-class';
 
-const SHARED_LINKS = [
-  { label: '分享页面', path: `/share/${SAMPLE_SHARE_TOKEN}` },
-  { label: 'API · Draw.io 源文件', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.drawio` },
-  { label: 'API · SVG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.svg` },
-  { label: 'API · PNG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.png` },
+const COPIED_FEEDBACK_MS = 1500;
+
+const SHARED_LINKS: { label: string; path: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { label: '分享页面', path: `/share/${SAMPLE_SHARE_TOKEN}`, Icon: Link2 },
+  { label: 'Draw.io 源文件', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.drawio`, Icon: FileCode },
+  { label: 'SVG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.svg`, Icon: ImageIcon },
+  { label: 'PNG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.png`, Icon: ImageIcon },
 ];
 
-function CopyableLink({ label, url }: { label: string; url: string }) {
+function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: ComponentType<{ className?: string }> }) {
+  const [isCopied, setIsCopied] = useState(false);
+
+  const copyUrl = () => {
+    void navigator.clipboard.writeText(url);
+    setIsCopied(true);
+    window.setTimeout(() => setIsCopied(false), COPIED_FEEDBACK_MS);
+  };
+
   return (
-    <div className="space-y-1">
-      <div className="text-xs font-medium text-foreground/70">{label}</div>
-      <div className="flex gap-2">
-        <input readOnly value={url} className="h-8 min-w-0 flex-1 rounded-lg border border-border-subtle bg-surface-1 px-2.5 font-mono text-[11px] text-muted-foreground outline-none focus:border-ring" />
-        <button type="button" className={`${OUTLINE_BUTTON_CLASS} text-xs`}>复制</button>
+    <div className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-sunken">
+      <Icon className="size-4 shrink-0 text-ink-faint" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[13px] text-ink">{label}</div>
+        <div className="truncate font-mono text-[11px] text-ink-faint">{url}</div>
       </div>
+      <button type="button" onClick={copyUrl} aria-label={`复制${label}链接`} title="复制链接" className={iconButtonClass('ghost', 'sm')}>
+        {isCopied ? <Check className="text-success" /> : <Copy />}
+      </button>
     </div>
   );
 }
 
 export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
   const [isShared, setIsShared] = useState(initiallyShared);
+  const VisibilityIcon = isShared ? Globe : Lock;
 
   return (
-    <div className="w-96 max-w-[calc(100vw-24px)] space-y-4 rounded-2xl bg-popover p-4 shadow-pop">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">分享</div>
-          <div className="text-xs text-muted-foreground">{isShared ? '任何拿到链接的人都可以查看和下载' : '当前仅自己可见'}</div>
+    <div className="w-[360px] max-w-[calc(100vw-24px)] rounded-xl bg-surface p-1.5 shadow-pop">
+      <div className="flex items-center gap-3 p-2.5">
+        <span className={`flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors ${isShared ? 'bg-success-soft text-success' : 'bg-sunken text-ink-muted'}`}>
+          <VisibilityIcon className="size-4" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-semibold">公开分享</div>
+          <div className="text-xs text-ink-muted">{isShared ? '任何拿到链接的人都可以查看和下载' : '当前仅自己可见'}</div>
         </div>
-        <button type="button" onClick={() => setIsShared(shared => !shared)} className={isShared ? DESTRUCTIVE_BUTTON_CLASS : PRIMARY_BUTTON_CLASS}>
-          {isShared ? '停止分享' : '开启分享'}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isShared}
+          aria-label="公开分享"
+          onClick={() => setIsShared(shared => !shared)}
+          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${FOCUS_RING} ${isShared ? 'bg-success' : 'bg-line-strong'}`}
+        >
+          <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-xs transition-transform duration-200 ease-out ${isShared ? 'translate-x-4' : ''}`} />
         </button>
       </div>
       {isShared && (
-        <div className="space-y-3">
-          {SHARED_LINKS.map(link => <CopyableLink key={link.path} label={link.label} url={`${window.location.origin}${link.path}`} />)}
+        <div className="animate-fade-in space-y-px border-t border-line px-0.5 pt-1.5 pb-0.5">
+          {SHARED_LINKS.map(link => <CopyableLink key={link.path} label={link.label} Icon={link.Icon} url={`${window.location.origin}${link.path}`} />)}
         </div>
       )}
     </div>

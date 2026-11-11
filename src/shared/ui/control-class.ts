@@ -1,13 +1,50 @@
-// Shared control looks, mirroring next-ai-draw-io's button and input variants.
+// Size and tone are separate lookups because Tailwind does not guarantee which of two
+// conflicting utilities wins; appending `size-7` to a `size-8` class silently does nothing.
 
-const FOCUS_RING = 'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring';
+type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger';
+type ButtonSize = 'md' | 'lg' | 'xl';
+type IconButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
-export const PRIMARY_BUTTON_CLASS = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-[13px] font-medium text-primary-foreground transition-[opacity,background-color] hover:opacity-85 disabled:pointer-events-none disabled:bg-muted disabled:text-faint ${FOCUS_RING}`;
+export const FOCUS_RING = 'outline-none focus-visible:ring-2 focus-visible:ring-brand/45 focus-visible:ring-offset-1 focus-visible:ring-offset-surface';
 
-export const OUTLINE_BUTTON_CLASS = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-card px-2.5 text-[13px] text-foreground transition-colors hover:bg-accent disabled:pointer-events-none disabled:opacity-50 ${FOCUS_RING}`;
+// Applies to a text input itself or to a wrapper around one (:focus-within matches both).
+export const FIELD_FOCUS_CLASS = 'transition-[border-color,background-color,box-shadow] duration-150 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10';
 
-export const GHOST_BUTTON_CLASS = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-35 ${FOCUS_RING}`;
+export const SURFACE_CARD_CLASS = 'rounded-xl border border-line bg-surface shadow-xs';
 
-export const DESTRUCTIVE_BUTTON_CLASS = `inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-destructive/25 px-2.5 text-[13px] text-destructive transition-colors hover:bg-destructive/5 disabled:pointer-events-none disabled:opacity-50 ${FOCUS_RING}`;
+const CONTROL_BASE = `inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity] duration-150 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0 ${FOCUS_RING}`;
 
-export const TEXT_INPUT_CLASS = 'h-9 w-full min-w-0 rounded-xl border border-border-subtle bg-surface-1 px-3.5 text-sm text-foreground placeholder:text-faint transition-all duration-150 ease-out hover:border-border-default focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/10';
+const BUTTON_TONE_CLASS: Record<ButtonTone, string> = {
+  primary: 'bg-ink text-white shadow-xs hover:bg-ink/85',
+  secondary: 'border border-line bg-surface text-ink shadow-xs hover:border-line-strong hover:bg-sunken',
+  ghost: 'text-ink-muted hover:bg-hover hover:text-ink',
+  accent: 'border border-brand/30 bg-brand-soft text-brand-ink shadow-xs hover:border-brand/40',
+  danger: 'text-ink-muted hover:bg-danger-soft hover:text-danger',
+};
+
+const BUTTON_SIZE_CLASS: Record<ButtonSize, string> = {
+  md: 'h-8 gap-1.5 rounded-lg px-3 text-[13px] font-medium [&_svg]:size-4',
+  lg: 'h-9 gap-1.5 rounded-lg px-4 text-[13px] font-medium [&_svg]:size-4',
+  xl: 'h-10 gap-1.5 rounded-xl px-4 text-sm font-medium [&_svg]:size-4',
+};
+
+const ICON_BUTTON_SIZE_CLASS: Record<IconButtonSize, string> = {
+  sm: 'size-7 rounded-md [&_svg]:size-3.5',
+  md: 'size-8 rounded-lg [&_svg]:size-4',
+  lg: 'size-9 rounded-lg [&_svg]:size-4',
+  xl: 'size-10 rounded-xl [&_svg]:size-5',
+};
+
+export function buttonClass(tone: ButtonTone, size: ButtonSize = 'md') {
+  return `${CONTROL_BASE} ${BUTTON_TONE_CLASS[tone]} ${BUTTON_SIZE_CLASS[size]}`;
+}
+
+export function iconButtonClass(tone: ButtonTone = 'ghost', size: IconButtonSize = 'md') {
+  return `${CONTROL_BASE} ${BUTTON_TONE_CLASS[tone]} ${ICON_BUTTON_SIZE_CLASS[size]}`;
+}
+
+// Selection is driven by aria-current="page" (set by NavLink), so callers never pass an active flag.
+// Pair with NAV_ITEM_COUNT_CLASS for a trailing count badge.
+export const NAV_ITEM_CLASS = `group flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-ink-muted transition-colors duration-150 hover:bg-hover hover:text-ink aria-[current=page]:bg-ink aria-[current=page]:font-medium aria-[current=page]:text-white aria-[current=page]:hover:bg-ink aria-[current=page]:hover:text-white [&_svg]:size-4 [&_svg]:shrink-0 ${FOCUS_RING}`;
+
+export const NAV_ITEM_COUNT_CLASS = 'ml-auto text-xs tabular-nums text-ink-faint group-aria-[current=page]:text-white/60';
