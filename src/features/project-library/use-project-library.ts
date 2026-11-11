@@ -7,6 +7,12 @@ import { log, serializeError } from '../../shared/lib/logger';
 
 const MODULE = 'ProjectLibrary';
 
+export type ProjectSettings = {
+  name: string;
+  folderId: string | null;
+  isShared: boolean;
+};
+
 function replaceById<T extends { id: string }>(items: T[], replacement: T): T[] {
   return items.map(item => (item.id === replacement.id ? replacement : item));
 }
@@ -47,21 +53,25 @@ export function useProjectLibrary() {
     }).finally(() => setIsLoading(false));
   }, [runReporting]);
 
-  const createProject = (name: string, folderId: string | null) => runReporting('Create project', async () => {
-    const project = await projectApi.createProject(name, folderId);
+  // Creation takes only name and folder; sharing is a separate request on the new project.
+  const createProject = (settings: ProjectSettings) => runReporting('Create project', async () => {
+    let project = await projectApi.createProject(settings.name, settings.folderId);
+    if (settings.isShared) project = await projectApi.shareProject(project.id);
     log('info', MODULE, 'Project created', { projectId: project.id });
     setProjects(current => [project, ...current]);
     return project;
   });
 
-  const renameProject = (project: Project, name: string) => runReporting('Rename project', async () => {
-    const renamed = await projectApi.renameProject(project.id, name);
-    setProjects(current => replaceById(current, renamed));
-  });
-
-  const moveProjectToFolder = (project: Project, folderId: string | null) => runReporting('Move project to folder', async () => {
-    const moved = await projectApi.moveProjectToFolder(project.id, folderId);
-    setProjects(current => replaceById(current, moved));
+  // The server has no combined update endpoint, so only the changed settings are sent, one request each.
+  const editProject = (project: Project, settings: ProjectSettings) => runReporting('Edit project', async () => {
+    let edited = project;
+    if (settings.name !== project.name) edited = await projectApi.renameProject(project.id, settings.name);
+    if (settings.folderId !== project.folderId) edited = await projectApi.moveProjectToFolder(project.id, settings.folderId);
+    if (settings.isShared !== (project.shareToken !== null)) {
+      edited = await (settings.isShared ? projectApi.shareProject : projectApi.unshareProject)(project.id);
+    }
+    log('info', MODULE, 'Project edited', { projectId: project.id });
+    setProjects(current => replaceById(current, edited));
   });
 
   const moveProjectToTrash = (project: Project) => runReporting('Move project to trash', async () => {
@@ -112,8 +122,7 @@ export function useProjectLibrary() {
     trashedProjects,
     folders,
     createProject,
-    renameProject,
-    moveProjectToFolder,
+    editProject,
     moveProjectToTrash,
     restoreProject,
     deleteProjectPermanently,

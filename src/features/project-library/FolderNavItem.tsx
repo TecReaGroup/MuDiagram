@@ -4,6 +4,7 @@ import { NavLink, useMatch } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
 import { useI18n } from '../../shared/i18n/language-context';
 import { iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
+import { ConfirmDeleteButton } from '../../shared/ui/ConfirmDeleteButton';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
 
 type FolderNavItemProps = {
@@ -36,10 +37,6 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
     );
   }
 
-  function confirmDelete() {
-    if (window.confirm(t('folder.confirmDelete', { name: folder.name }))) onDelete(folder);
-  }
-
   return (
     <div className="group/folder relative">
       <NavLink to={path} className={NAV_ITEM_CLASS}>
@@ -51,9 +48,15 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
         <button type="button" onClick={() => setIsRenaming(true)} aria-label={t('folder.rename')} title={t('common.rename')} className={iconButtonClass(actionTone, 'sm')}>
           <Pencil />
         </button>
-        <button type="button" onClick={confirmDelete} aria-label={t('folder.delete')} title={t('folder.deleteShort')} className={iconButtonClass(isActive ? 'inverse' : 'danger', 'sm')}>
+        <ConfirmDeleteButton
+          label={t('folder.delete')}
+          title={t('folder.confirmDeleteTitle')}
+          description={t('folder.confirmDeleteDescription', { name: folder.name })}
+          onConfirm={() => onDelete(folder)}
+          className={iconButtonClass(isActive ? 'inverse' : 'danger', 'sm')}
+        >
           <Trash />
-        </button>
+        </ConfirmDeleteButton>
       </div>
     </div>
   );

@@ -58,8 +58,7 @@ export function ProjectListPage() {
             key={project.id}
             project={project}
             folders={library.folders}
-            onRename={(target, name) => void library.renameProject(target, name)}
-            onMoveToFolder={(target, targetFolderId) => void library.moveProjectToFolder(target, targetFolderId)}
+            onEdit={(target, settings) => void library.editProject(target, settings)}
             onMoveToTrash={target => void library.moveProjectToTrash(target)}
           />
         ))}

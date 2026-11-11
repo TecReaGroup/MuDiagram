@@ -1,7 +1,7 @@
 import { Info, Languages, Settings, Sparkle, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
-import { iconButtonClass, NAV_ITEM_CLASS } from '../../shared/ui/control-class';
+import { iconButtonClass, MODAL_DIALOG_CLASS, NAV_ITEM_CLASS } from '../../shared/ui/control-class';
 import { AboutSettingsSection } from './AboutSettingsSection';
 import { AiModelSettingsSection } from './AiModelSettingsSection';
 import { LanguageSettingsSection } from './LanguageSettingsSection';
@@ -31,7 +31,7 @@ export function SiteSettingsButton() {
         aria-labelledby="site-settings-title"
         // A click whose target is the <dialog> itself landed on the backdrop.
         onClick={event => event.target === dialogRef.current && dialogRef.current.close()}
-        className="m-auto h-[min(760px,calc(100vh-48px))] w-[min(1120px,calc(100vw-48px))] overflow-hidden rounded-2xl bg-surface p-0 text-ink shadow-pop backdrop:bg-ink/30 backdrop:backdrop-blur-[2px] open:animate-pop-in"
+        className={`${MODAL_DIALOG_CLASS} h-[min(760px,calc(100vh-48px))] w-[min(1120px,calc(100vw-48px))] overflow-hidden p-0`}
       >
         <div className="flex h-full flex-col sm:flex-row">
           <aside className="shrink-0 border-b border-line bg-canvas p-3 sm:w-64 sm:border-r sm:border-b-0 sm:p-5">

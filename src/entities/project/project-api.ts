@@ -30,7 +30,14 @@ export const renameProject = (projectId: string, name: string) =>
 export const moveProjectToFolder = (projectId: string, folderId: string | null) =>
   requestJson<Project>(`${PROJECT_API}/${projectId}/folder`, { method: 'PUT', body: JSON.stringify({ folderId }) });
 
-export const moveProjectToTrash = (projectId: string) =>
+/** An already shared project keeps its existing link. */
+export const shareProject = (projectId: string) =>
+  requestJson<Project>(`${PROJECT_API}/${projectId}/share`, { method: 'POST' });
+
+export const unshareProject = (projectId: string) =>
+  requestJson<Project>(`${PROJECT_API}/${projectId}/share`, { method: 'DELETE' });
+
+export const moveProjectToTrash =(projectId: string) =>
   requestJson<TrashedProject>(`${PROJECT_API}/${projectId}`, { method: 'DELETE' });
 
 export const listTrashedProjects = () => requestJson<TrashedProject[]>(TRASH_API);

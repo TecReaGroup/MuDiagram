@@ -3,7 +3,8 @@ import { useState, type ComponentType } from 'react';
 import { SAMPLE_SHARE_TOKEN } from '../../entities/project/sample-project';
 import { useI18n } from '../../shared/i18n/language-context';
 import type { MessageKey } from '../../shared/i18n/message';
-import { FOCUS_RING, iconButtonClass } from '../../shared/ui/control-class';
+import { iconButtonClass } from '../../shared/ui/control-class';
+import { Switch } from '../../shared/ui/Switch';
 
 const COPIED_FEEDBACK_MS = 1500;
 
@@ -53,16 +54,7 @@ export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
           <div className="text-[13px] font-semibold">{t('share.public')}</div>
           <div className="text-xs text-ink-muted">{t(isShared ? 'share.publicHint' : 'share.privateHint')}</div>
         </div>
-        <button
-          type="button"
-          role="switch"
-          aria-checked={isShared}
-          aria-label={t('share.public')}
-          onClick={() => setIsShared(shared => !shared)}
-          className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${FOCUS_RING} ${isShared ? 'bg-success' : 'bg-line-strong'}`}
-        >
-          <span className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-white shadow-xs transition-transform duration-200 ease-out ${isShared ? 'translate-x-4' : ''}`} />
-        </button>
+        <Switch checked={isShared} label={t('share.public')} onChange={setIsShared} />
       </div>
       {isShared && (
         <div className="animate-fade-in space-y-px border-t border-line px-0.5 pt-1.5 pb-0.5">

@@ -4,7 +4,7 @@ const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
-/** "Just now", "5 minutes ago", "Today 10:24", "Yesterday", or a date for anything older. */
+/** "just now", "5 minutes ago", "today at 10:24", "yesterday", or a date; lowercase so it can sit mid-sentence. */
 export function formatRelativeTime(isoTime: string, { language, t }: Pick<I18n, 'language' | 't'>, now = new Date()): string {
   const time = new Date(isoTime);
   const elapsedMs = now.getTime() - time.getTime();
@@ -16,14 +16,10 @@ export function formatRelativeTime(isoTime: string, { language, t }: Pick<I18n, 
   if (time.getTime() >= startOfToday) {
     return t('time.today', { time: time.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' }) });
   }
-  if (time.getTime() >= startOfToday - DAY_MS) return capitalize(relativeTimeFormat.format(-1, 'day'));
+  if (time.getTime() >= startOfToday - DAY_MS) return relativeTimeFormat.format(-1, 'day');
   return time.toLocaleDateString(language, {
     year: time.getFullYear() === now.getFullYear() ? undefined : 'numeric',
     month: 'long',
     day: 'numeric',
   });
-}
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

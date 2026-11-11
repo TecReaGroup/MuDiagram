@@ -1,6 +1,7 @@
 import { RotateCcw, Trash } from 'lucide-react';
 import type { TrashedProject } from '../../entities/project/project-api';
 import { useI18n, type I18n } from '../../shared/i18n/language-context';
+import { ConfirmDeleteButton } from '../../shared/ui/ConfirmDeleteButton';
 import { iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 import { ProjectPreview } from './ProjectPreview';
 
@@ -23,10 +24,6 @@ export function TrashedProjectCard({ project, onRestore, onDeletePermanently }: 
   const i18n = useI18n();
   const { t } = i18n;
 
-  function confirmDelete() {
-    if (window.confirm(t('trash.confirmDelete', { name: project.name }))) onDeletePermanently(project);
-  }
-
   return (
     <article className={`${SURFACE_CARD_CLASS} group animate-fade-in p-1.5`}>
       <div className="dot-grid flex aspect-[27/14] items-center justify-center overflow-hidden rounded-lg opacity-60 grayscale">
@@ -41,9 +38,15 @@ export function TrashedProjectCard({ project, onRestore, onDeletePermanently }: 
           <button type="button" onClick={() => onRestore(project)} aria-label={t('trash.restore')} title={t('trash.restore')} className={iconButtonClass('ghost', 'sm')}>
             <RotateCcw />
           </button>
-          <button type="button" onClick={confirmDelete} aria-label={t('trash.deletePermanently')} title={t('trash.deletePermanently')} className={iconButtonClass('danger', 'sm')}>
+          <ConfirmDeleteButton
+            label={t('trash.deletePermanently')}
+            title={t('trash.confirmDeleteTitle')}
+            description={t('trash.confirmDeleteDescription', { name: project.name })}
+            onConfirm={() => onDeletePermanently(project)}
+            className={iconButtonClass('danger', 'sm')}
+          >
             <Trash />
-          </button>
+          </ConfirmDeleteButton>
         </div>
       </div>
     </article>

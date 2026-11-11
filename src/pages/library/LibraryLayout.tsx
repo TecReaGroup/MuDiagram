@@ -3,7 +3,8 @@ import { useState } from 'react';
 import { Link, Outlet, useMatch, useNavigate } from 'react-router-dom';
 import type { LibraryOutletContext } from '../../features/project-library/library-outlet';
 import { LibrarySidebar } from '../../features/project-library/LibrarySidebar';
-import { useProjectLibrary } from '../../features/project-library/use-project-library';
+import { NewProjectDialog } from '../../features/project-library/NewProjectDialog';
+import { useProjectLibrary, type ProjectSettings } from '../../features/project-library/use-project-library';
 import { SiteSettingsButton } from '../../features/site-settings/SiteSettingsButton';
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
@@ -16,21 +17,31 @@ export function LibraryLayout() {
   const viewedFolderId = useMatch('/folder/:folderId')?.params.folderId ?? null;
   const library = useProjectLibrary();
   const [searchText, setSearchText] = useState('');
+  const [isNewProjectDialogOpen, setIsNewProjectDialogOpen] = useState(false);
   const [isCreatingProject, setIsCreatingProject] = useState(false);
 
-  // A project created while viewing a folder goes straight into that folder.
-  async function createAndOpenProject() {
+  async function createAndOpenProject(settings: ProjectSettings) {
     setIsCreatingProject(true);
-    const project = await library.createProject(t('project.untitled'), viewedFolderId);
+    const project = await library.createProject(settings);
     setIsCreatingProject(false);
     if (project) navigate(`/project/${project.id}`);
   }
+
+  const openNewProjectDialog = () => setIsNewProjectDialogOpen(true);
 
   const outletContext: LibraryOutletContext = { library, searchText };
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      <LibrarySidebar library={library} isCreatingProject={isCreatingProject} onCreateProject={() => void createAndOpenProject()} />
+      <LibrarySidebar library={library} isCreatingProject={isCreatingProject} onCreateProject={openNewProjectDialog} />
+      {/* A project created while viewing a folder defaults to that folder. */}
+      <NewProjectDialog
+        isOpen={isNewProjectDialogOpen}
+        folders={library.folders}
+        initialFolderId={viewedFolderId}
+        onCreate={settings => void createAndOpenProject(settings)}
+        onClose={() => setIsNewProjectDialogOpen(false)}
+      />
       <main className="min-w-0 flex-1 md:py-2 md:pr-2">
         <div className="min-h-full bg-surface md:min-h-[calc(100vh-16px)] md:rounded-xl md:border md:border-line md:shadow-xs">
           <header className="grid h-14 grid-cols-[1fr_minmax(0,36rem)_1fr] items-center gap-3 px-4 sm:px-6">
@@ -50,7 +61,7 @@ export function LibraryLayout() {
             <div className="flex items-center justify-self-end gap-1.5">
               <button
                 type="button"
-                onClick={() => void createAndOpenProject()}
+                onClick={openNewProjectDialog}
                 disabled={isCreatingProject}
                 aria-label={t('library.newProject')}
                 className={`${iconButtonClass('primary', 'lg')} md:hidden`}

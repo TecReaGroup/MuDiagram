@@ -2,7 +2,8 @@
 // conflicting utilities wins; appending `size-7` to a `size-8` class silently does nothing.
 
 // `inverse` sits on a dark (selected) surface such as an active nav item.
-type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger' | 'inverse';
+// `danger` is a quiet icon action; `destructive` is the solid button that commits the deletion.
+type ButtonTone = 'primary' | 'secondary' | 'ghost' | 'accent' | 'danger' | 'destructive' | 'inverse';
 type ButtonSize = 'md' | 'lg' | 'xl';
 type IconButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 
@@ -11,7 +12,16 @@ export const FOCUS_RING = 'outline-none focus-visible:ring-2 focus-visible:ring-
 // Applies to a text input itself or to a wrapper around one (:focus-within matches both).
 export const FIELD_FOCUS_CLASS = 'transition-[border-color,background-color,box-shadow] duration-150 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10';
 
+export const FIELD_INPUT_CLASS = `h-10 w-full rounded-xl border border-line bg-surface px-3.5 text-[13px] text-ink outline-none placeholder:text-ink-faint hover:border-line-strong ${FIELD_FOCUS_CLASS}`;
+
+// An option in a form field's dropdown: same type as FIELD_INPUT_CLASS so the open list reads as the
+// field's own values; selection shows as a background plus a check icon, never as a weight change.
+export const FIELD_OPTION_CLASS = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-[13px] text-ink transition-colors hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-none aria-checked:bg-sunken';
+
 export const SURFACE_CARD_CLASS = 'rounded-xl border border-line bg-surface shadow-xs';
+
+// For a native <dialog> opened with showModal(); callers add size and padding.
+export const MODAL_DIALOG_CLASS = 'm-auto rounded-2xl bg-surface text-ink shadow-pop backdrop:bg-ink/30 backdrop:backdrop-blur-[2px] open:animate-pop-in';
 
 const CONTROL_BASE = `inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity] duration-150 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0 ${FOCUS_RING}`;
 
@@ -21,6 +31,7 @@ const BUTTON_TONE_CLASS: Record<ButtonTone, string> = {
   ghost: 'text-ink-muted hover:bg-hover hover:text-ink',
   accent: 'border border-brand/30 bg-brand-soft text-brand-ink shadow-xs hover:border-brand/40',
   danger: 'text-ink-muted hover:bg-danger-soft hover:text-danger',
+  destructive: 'bg-danger text-white shadow-xs hover:bg-danger/90',
   inverse: 'text-white/70 hover:bg-white/15 hover:text-white',
 };
 
@@ -51,7 +62,8 @@ export const NAV_ITEM_CLASS = `group flex h-9 w-full items-center gap-2.5 rounde
 
 export const NAV_ITEM_COUNT_CLASS = 'ml-auto text-xs tabular-nums text-ink-faint group-aria-[current=page]:text-white/60';
 
-export const MENU_PANEL_CLASS = 'z-20 animate-pop-in rounded-lg bg-surface p-1 shadow-pop';
+// The gap keeps the checked item's and hovered item's backgrounds from merging into one block.
+export const MENU_PANEL_CLASS = 'z-20 flex animate-pop-in flex-col gap-0.5 rounded-lg bg-surface p-1 shadow-pop';
 
 // Selection is driven by aria-checked (menuitemradio), so callers never pass a selected flag.
 export const MENU_ITEM_CLASS = 'h-8 w-full truncate rounded-md px-2.5 text-sm text-ink-muted transition-colors hover:bg-sunken hover:text-ink focus-visible:bg-sunken focus-visible:outline-none aria-checked:bg-sunken aria-checked:font-medium aria-checked:text-ink';
