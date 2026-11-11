@@ -1,4 +1,4 @@
-import { requestJson } from '../../shared/api/request-json';
+import { ApiError, requestJson } from '../../shared/api/request-json';
 
 export type Project = {
   id: string;
@@ -49,6 +49,19 @@ export const restoreProject = (projectId: string) =>
 
 export const deleteProjectPermanently = (projectId: string) =>
   requestJson<void>(`${TRASH_API}/${projectId}`, { method: 'DELETE' });
+
+export async function getDiagramXml(projectId: string): Promise<string> {
+  const response = await fetch(`${PROJECT_API}/${projectId}/diagram.drawio`, { cache: 'no-store' });
+  if (!response.ok) throw new ApiError(response.status, `Diagram request failed with ${response.status}`);
+  return response.text();
+}
+
+/**
+ * Args:
+ *   snapshot: `svg` and `png` are data URLs exported from the same editor state as `xml`.
+ */
+export const saveDiagram = (projectId: string, snapshot: { xml: string; svg: string; png: string }) =>
+  requestJson<Project>(`${PROJECT_API}/${projectId}/diagram`, { method: 'PUT', body: JSON.stringify(snapshot) });
 
 /** `updatedAt` doubles as a cache buster so a re-saved diagram shows its new preview. */
 export function projectPreviewUrl(project: Project): string {

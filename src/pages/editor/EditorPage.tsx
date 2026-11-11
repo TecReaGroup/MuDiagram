@@ -87,7 +87,7 @@ export function EditorPage() {
 
       <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         <div className={`${SURFACE_CARD_CLASS} min-w-0 flex-1 overflow-hidden`}>
-          <DiagramCanvas />
+          <DiagramCanvas key={projectId} projectId={projectId} />
         </div>
         {isAiPanelOpen && (
           <div className="w-[380px] shrink-0 animate-panel-in max-lg:fixed max-lg:inset-y-2 max-lg:right-2 max-lg:z-20 max-lg:w-[min(380px,calc(100vw-16px))]">
