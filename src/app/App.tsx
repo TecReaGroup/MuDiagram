@@ -1,5 +1,6 @@
 import '../styles.css';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { LanguageProvider } from '../shared/i18n/language-context';
 import { EditorPage } from '../pages/editor/EditorPage';
 import { LibraryLayout } from '../pages/library/LibraryLayout';
 import { ProjectListPage } from '../pages/library/ProjectListPage';
@@ -21,5 +22,9 @@ const router = createBrowserRouter([
 ]);
 
 export function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <LanguageProvider>
+      <RouterProvider router={router} />
+    </LanguageProvider>
+  );
 }

@@ -3,12 +3,15 @@
 project_root = "./backend/data/project"
 # JSON file holding the folder list (relative to the repository root)
 folder_file = "./backend/data/folder/folder.json"
+# JSON file holding the settings changed from the Settings dialog (relative to the repository root)
+setting_file = "./backend/data/setting/setting.json"
 
 [trash]
 # Days a deleted project stays in the trash before it is purged permanently
 retention_days = 7
 
 [ui]
+# Default interface language; a language picked in Settings overrides it.
 # Options: "zh-CN" | "en-US"
 language = "zh-CN"
 

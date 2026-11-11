@@ -1,5 +1,6 @@
 import { ArrowUp, Check, CircleExclamationPoint, LoaderCircle, SquarePen, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
+import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { FIELD_FOCUS_CLASS, iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 
@@ -15,32 +16,34 @@ const SAMPLE_MESSAGES: SampleMessage[] = [
 ];
 
 const TOOL_STATUS_STYLES = {
-  done: { label: '已更新图表', Icon: Check, className: 'bg-brand-soft text-brand-ink' },
-  failed: { label: '绘制失败', Icon: CircleExclamationPoint, className: 'bg-danger-soft text-danger' },
-  running: { label: '正在绘制…', Icon: LoaderCircle, className: 'bg-sunken text-ink-muted [&_svg]:animate-spin' },
+  done: { labelKey: 'ai.toolDone', Icon: Check, className: 'bg-brand-soft text-brand-ink' },
+  failed: { labelKey: 'ai.toolFailed', Icon: CircleExclamationPoint, className: 'bg-danger-soft text-danger' },
+  running: { labelKey: 'ai.toolRunning', Icon: LoaderCircle, className: 'bg-sunken text-ink-muted [&_svg]:animate-spin' },
 } as const;
 
 function ToolStatusChip({ status }: { status: ToolStatus }) {
-  const { label, Icon, className } = TOOL_STATUS_STYLES[status];
+  const { t } = useI18n();
+  const { labelKey, Icon, className } = TOOL_STATUS_STYLES[status];
   return (
     <span className={`inline-flex h-6 items-center gap-1 rounded-md px-2 text-xs font-medium ${className}`}>
       <Icon className="size-3.5" />
-      {label}
+      {t(labelKey)}
     </span>
   );
 }
 
 export function AiChatPanel({ onClose }: { onClose: () => void }) {
+  const { t } = useI18n();
   const [draft, setDraft] = useState('');
 
   return (
     <aside className={`${SURFACE_CARD_CLASS} flex h-full w-full flex-col max-lg:shadow-pop`}>
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line pr-2 pl-4">
-        <span className="flex-1 text-[13px] font-semibold">AI 助手</span>
-        <button type="button" aria-label="新对话" title="新对话" className={iconButtonClass()}>
+        <span className="flex-1 text-[13px] font-semibold">{t('ai.assistant')}</span>
+        <button type="button" aria-label={t('ai.newChat')} title={t('ai.newChat')} className={iconButtonClass()}>
           <SquarePen />
         </button>
-        <button type="button" onClick={onClose} aria-label="关闭" title="关闭" className={iconButtonClass()}>
+        <button type="button" onClick={onClose} aria-label={t('common.close')} title={t('common.close')} className={iconButtonClass()}>
           <X />
         </button>
       </header>
@@ -69,15 +72,15 @@ export function AiChatPanel({ onClose }: { onClose: () => void }) {
           value={draft}
           onChange={event => setDraft(event.target.value)}
           rows={2}
-          placeholder="描述你想怎么修改图表…"
+          placeholder={t('ai.inputPlaceholder')}
           className="scrollbar-thin block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-[13.5px] text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
         />
         <div className="flex items-center justify-between py-1.5 pr-1.5 pl-3">
-          <span className="text-[11px] text-ink-faint">Enter 发送 · Shift+Enter 换行</span>
+          <span className="text-[11px] text-ink-faint">{t('ai.inputHint')}</span>
           <button
             type="submit"
             disabled={!draft.trim()}
-            aria-label="发送"
+            aria-label={t('ai.send')}
             className="inline-flex size-7 items-center justify-center rounded-lg bg-ink text-white transition-[background-color,opacity] hover:bg-ink/85 disabled:bg-hover disabled:text-ink-faint"
           >
             <ArrowUp className="size-4" />

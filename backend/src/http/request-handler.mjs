@@ -5,12 +5,13 @@ import { aiRoutes } from '../modules/ai/ai-route.mjs';
 import { folderRoutes } from '../modules/folder/folder-route.mjs';
 import { projectRoutes } from '../modules/project/project-route.mjs';
 import { trashRoutes } from '../modules/project/trash-route.mjs';
+import { settingRoutes } from '../modules/setting/setting-route.mjs';
 import { shareRoutes } from '../modules/share/share-route.mjs';
 import { HttpError } from '../shared/http-error.mjs';
 import { sendJson } from '../shared/http.mjs';
 import { streamFrontend } from './static-handler.mjs';
 
-const API_ROUTES = [...projectRoutes, ...trashRoutes, ...folderRoutes, ...shareRoutes, ...aiRoutes];
+const API_ROUTES = [...projectRoutes, ...trashRoutes, ...folderRoutes, ...shareRoutes, ...settingRoutes, ...aiRoutes];
 
 function matchApiRoute(method, pathname) {
   for (const route of API_ROUTES) {

@@ -3,15 +3,15 @@ import type { Project } from '../../entities/project/project-api';
 const NAME_COLLATOR = new Intl.Collator('zh-CN');
 
 export const VISIBILITY_TABS = [
-  { id: 'all', label: '全部', includes: (_project: Project) => true },
-  { id: 'public', label: '公开', includes: (project: Project) => project.shareToken !== null },
-  { id: 'private', label: '私有', includes: (project: Project) => project.shareToken === null },
+  { id: 'all', labelKey: 'library.visibility.all', includes: (_project: Project) => true },
+  { id: 'public', labelKey: 'project.public', includes: (project: Project) => project.shareToken !== null },
+  { id: 'private', labelKey: 'project.private', includes: (project: Project) => project.shareToken === null },
 ] as const;
 
 export const SORT_ORDERS = [
-  { id: 'updated', label: '最近修改', compare: (a: Project, b: Project) => b.updatedAt.localeCompare(a.updatedAt) },
-  { id: 'created', label: '最近创建', compare: (a: Project, b: Project) => b.createdAt.localeCompare(a.createdAt) },
-  { id: 'name', label: '名称', compare: (a: Project, b: Project) => NAME_COLLATOR.compare(a.name, b.name) },
+  { id: 'updated', labelKey: 'library.sort.updated', compare: (a: Project, b: Project) => b.updatedAt.localeCompare(a.updatedAt) },
+  { id: 'created', labelKey: 'library.sort.created', compare: (a: Project, b: Project) => b.createdAt.localeCompare(a.createdAt) },
+  { id: 'name', labelKey: 'library.sort.name', compare: (a: Project, b: Project) => NAME_COLLATOR.compare(a.name, b.name) },
 ] as const;
 
 export type VisibilityTabId = (typeof VISIBILITY_TABS)[number]['id'];

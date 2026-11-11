@@ -5,13 +5,13 @@ import type { LibraryOutletContext } from '../../features/project-library/librar
 import { LibrarySidebar } from '../../features/project-library/LibrarySidebar';
 import { useProjectLibrary } from '../../features/project-library/use-project-library';
 import { SiteSettingsButton } from '../../features/site-settings/SiteSettingsButton';
+import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { FIELD_FOCUS_CLASS, iconButtonClass } from '../../shared/ui/control-class';
 
-const UNTITLED_PROJECT_NAME = '未命名图表';
-
 /** Shell shared by all projects, a folder and the trash: sidebar, search, and the library state. */
 export function LibraryLayout() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const viewedFolderId = useMatch('/folder/:folderId')?.params.folderId ?? null;
   const library = useProjectLibrary();
@@ -21,7 +21,7 @@ export function LibraryLayout() {
   // A project created while viewing a folder goes straight into that folder.
   async function createAndOpenProject() {
     setIsCreatingProject(true);
-    const project = await library.createProject(UNTITLED_PROJECT_NAME, viewedFolderId);
+    const project = await library.createProject(t('project.untitled'), viewedFolderId);
     setIsCreatingProject(false);
     if (project) navigate(`/project/${project.id}`);
   }
@@ -43,7 +43,7 @@ export function LibraryLayout() {
                 type="search"
                 value={searchText}
                 onChange={event => setSearchText(event.target.value)}
-                placeholder="搜索图表"
+                placeholder={t('library.search')}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-ink-faint"
               />
             </label>
@@ -52,7 +52,7 @@ export function LibraryLayout() {
                 type="button"
                 onClick={() => void createAndOpenProject()}
                 disabled={isCreatingProject}
-                aria-label="新建图表"
+                aria-label={t('library.newProject')}
                 className={`${iconButtonClass('primary', 'lg')} md:hidden`}
               >
                 <Plus />
@@ -65,7 +65,7 @@ export function LibraryLayout() {
             {library.failure && (
               <p role="alert" className="mb-5 rounded-lg border border-danger/25 bg-danger-soft px-3.5 py-3 text-sm text-danger">{library.failure}</p>
             )}
-            {library.isLoading ? <p className="mt-16 text-center text-sm text-ink-muted">加载中…</p> : <Outlet context={outletContext} />}
+            {library.isLoading ? <p className="mt-16 text-center text-sm text-ink-muted">{t('common.loading')}</p> : <Outlet context={outletContext} />}
           </div>
         </div>
       </main>

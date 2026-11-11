@@ -43,3 +43,5 @@ temp/*
 !backend/data/project/.gitkeep
 /backend/data/folder/*
 !backend/data/folder/.gitkeep
+/backend/data/setting/*
+!backend/data/setting/.gitkeep

@@ -1,5 +1,6 @@
 import { ListSortDescending, ChevronDown } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import { useI18n } from '../../shared/i18n/language-context';
 import { FOCUS_RING, MENU_ITEM_CLASS, MENU_PANEL_CLASS } from '../../shared/ui/control-class';
 import { useDismiss } from '../../shared/ui/use-dismiss';
 import { SORT_ORDERS, type SortOrderId } from './library-view';
@@ -10,6 +11,7 @@ type SortMenuProps = {
 };
 
 export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const menuRootRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setIsOpen(false), []);
@@ -34,7 +36,7 @@ export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
         <span className="inline-grid justify-items-center text-center">
           {SORT_ORDERS.map(order => (
             <span key={order.id} aria-hidden={order.id !== selectedId} className={`col-start-1 row-start-1 ${order.id === selectedId ? '' : 'invisible'}`}>
-              {order.label}
+              {t(order.labelKey)}
             </span>
           ))}
         </span>
@@ -42,7 +44,7 @@ export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
       </button>
 
       {isOpen && (
-        <div role="menu" aria-label="排序方式" className={`${MENU_PANEL_CLASS} absolute inset-x-0 top-9 origin-top`}>
+        <div role="menu" aria-label={t('library.sortOrder')} className={`${MENU_PANEL_CLASS} absolute inset-x-0 top-9 origin-top`}>
           {SORT_ORDERS.map(order => (
             <button
               key={order.id}
@@ -52,7 +54,7 @@ export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
               onClick={() => selectOrder(order.id)}
               className={`${MENU_ITEM_CLASS} text-center`}
             >
-              {order.label}
+              {t(order.labelKey)}
             </button>
           ))}
         </div>

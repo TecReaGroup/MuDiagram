@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
 import type { Project } from '../../entities/project/project-api';
+import { useI18n } from '../../shared/i18n/language-context';
 import { formatRelativeTime } from '../../shared/lib/relative-time';
 import { iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
@@ -18,6 +19,8 @@ type ProjectCardProps = {
 };
 
 export function ProjectCard({ project, folders, onRename, onMoveToFolder, onMoveToTrash }: ProjectCardProps) {
+  const i18n = useI18n();
+  const { t } = i18n;
   const [isRenaming, setIsRenaming] = useState(false);
   const isShared = project.shareToken !== null;
   const VisibilityIcon = isShared ? Globe : Lock;
@@ -33,7 +36,7 @@ export function ProjectCard({ project, folders, onRename, onMoveToFolder, onMove
           {isRenaming ? (
             <InlineNameInput
               initialName={project.name}
-              label="图表名称"
+              label={t('project.name')}
               onSubmit={name => onRename(project, name)}
               onFinish={() => setIsRenaming(false)}
               className="relative z-10 -mx-1.5 h-6 w-[calc(100%+0.75rem)] font-medium"
@@ -45,17 +48,17 @@ export function ProjectCard({ project, folders, onRename, onMoveToFolder, onMove
           )}
           <div className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-faint">
             <VisibilityIcon className={`size-3 ${isShared ? 'text-success' : ''}`} />
-            <span>{isShared ? '公开' : '私有'}</span>
+            <span>{t(isShared ? 'project.public' : 'project.private')}</span>
             <span aria-hidden>·</span>
-            <time dateTime={project.updatedAt}>{formatRelativeTime(project.updatedAt)}</time>
+            <time dateTime={project.updatedAt}>{formatRelativeTime(project.updatedAt, i18n)}</time>
           </div>
         </div>
         <div className="relative z-10 flex gap-0.5 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-          <button type="button" onClick={() => setIsRenaming(true)} aria-label="重命名" title="重命名" className={iconButtonClass('ghost', 'sm')}>
+          <button type="button" onClick={() => setIsRenaming(true)} aria-label={t('common.rename')} title={t('common.rename')} className={iconButtonClass('ghost', 'sm')}>
             <Pencil />
           </button>
           <MoveToFolderMenu currentFolderId={project.folderId} folders={folders} onMove={folderId => onMoveToFolder(project, folderId)} />
-          <button type="button" onClick={() => onMoveToTrash(project)} aria-label="移到回收站" title="移到回收站" className={iconButtonClass('danger', 'sm')}>
+          <button type="button" onClick={() => onMoveToTrash(project)} aria-label={t('project.moveToTrash')} title={t('project.moveToTrash')} className={iconButtonClass('danger', 'sm')}>
             <Trash />
           </button>
         </div>

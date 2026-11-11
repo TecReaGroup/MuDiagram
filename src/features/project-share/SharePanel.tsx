@@ -1,18 +1,21 @@
 import { Check, Copy, FileCode, Globe, Image as ImageIcon, Link2, Lock } from 'lucide-react';
 import { useState, type ComponentType } from 'react';
 import { SAMPLE_SHARE_TOKEN } from '../../entities/project/sample-project';
+import { useI18n } from '../../shared/i18n/language-context';
+import type { MessageKey } from '../../shared/i18n/message';
 import { FOCUS_RING, iconButtonClass } from '../../shared/ui/control-class';
 
 const COPIED_FEEDBACK_MS = 1500;
 
-const SHARED_LINKS: { label: string; path: string; Icon: ComponentType<{ className?: string }> }[] = [
-  { label: '分享页面', path: `/share/${SAMPLE_SHARE_TOKEN}`, Icon: Link2 },
-  { label: 'Draw.io 源文件', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.drawio`, Icon: FileCode },
-  { label: 'SVG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.svg`, Icon: ImageIcon },
-  { label: 'PNG 图片', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.png`, Icon: ImageIcon },
+const SHARED_LINKS: { labelKey: MessageKey; path: string; Icon: ComponentType<{ className?: string }> }[] = [
+  { labelKey: 'share.page', path: `/share/${SAMPLE_SHARE_TOKEN}`, Icon: Link2 },
+  { labelKey: 'share.drawioFile', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.drawio`, Icon: FileCode },
+  { labelKey: 'share.svgImage', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.svg`, Icon: ImageIcon },
+  { labelKey: 'share.pngImage', path: `/api/share/${SAMPLE_SHARE_TOKEN}/diagram.png`, Icon: ImageIcon },
 ];
 
 function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: ComponentType<{ className?: string }> }) {
+  const { t } = useI18n();
   const [isCopied, setIsCopied] = useState(false);
 
   const copyUrl = () => {
@@ -28,7 +31,7 @@ function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: 
         <div className="text-[13px] text-ink">{label}</div>
         <div className="truncate font-mono text-[11px] text-ink-faint">{url}</div>
       </div>
-      <button type="button" onClick={copyUrl} aria-label={`复制${label}链接`} title="复制链接" className={iconButtonClass('ghost', 'sm')}>
+      <button type="button" onClick={copyUrl} aria-label={t('share.copyNamedLink', { label })} title={t('share.copyLink')} className={iconButtonClass('ghost', 'sm')}>
         {isCopied ? <Check className="text-success" /> : <Copy />}
       </button>
     </div>
@@ -36,6 +39,7 @@ function CopyableLink({ label, url, Icon }: { label: string; url: string; Icon: 
 }
 
 export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
+  const { t } = useI18n();
   const [isShared, setIsShared] = useState(initiallyShared);
   const VisibilityIcon = isShared ? Globe : Lock;
 
@@ -46,14 +50,14 @@ export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
           <VisibilityIcon className="size-4" />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-semibold">公开分享</div>
-          <div className="text-xs text-ink-muted">{isShared ? '任何拿到链接的人都可以查看和下载' : '当前仅自己可见'}</div>
+          <div className="text-[13px] font-semibold">{t('share.public')}</div>
+          <div className="text-xs text-ink-muted">{t(isShared ? 'share.publicHint' : 'share.privateHint')}</div>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={isShared}
-          aria-label="公开分享"
+          aria-label={t('share.public')}
           onClick={() => setIsShared(shared => !shared)}
           className={`relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${FOCUS_RING} ${isShared ? 'bg-success' : 'bg-line-strong'}`}
         >
@@ -62,7 +66,7 @@ export function SharePanel({ initiallyShared }: { initiallyShared: boolean }) {
       </div>
       {isShared && (
         <div className="animate-fade-in space-y-px border-t border-line px-0.5 pt-1.5 pb-0.5">
-          {SHARED_LINKS.map(link => <CopyableLink key={link.path} label={link.label} Icon={link.Icon} url={`${window.location.origin}${link.path}`} />)}
+          {SHARED_LINKS.map(link => <CopyableLink key={link.path} label={t(link.labelKey)}Icon={link.Icon} url={`${window.location.origin}${link.path}`} />)}
         </div>
       )}
     </div>

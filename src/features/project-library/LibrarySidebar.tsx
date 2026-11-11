@@ -2,6 +2,7 @@ import { ChevronRight, Folder as FolderIcon, LayoutGrid, Plus, Trash } from 'luc
 import { useState } from 'react';
 import { Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
+import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { buttonClass, FOCUS_RING, iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
@@ -15,14 +16,15 @@ type LibrarySidebarProps = {
 };
 
 export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: LibrarySidebarProps) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const viewedFolderId = useMatch('/folder/:folderId')?.params.folderId;
   const [isFolderListOpen, setIsFolderListOpen] = useState(true);
   const [isNamingNewFolder, setIsNamingNewFolder] = useState(false);
 
   const libraryLinks = [
-    { path: '/', label: '全部图表', count: library.projects.length, Icon: LayoutGrid },
-    { path: '/trash', label: '回收站', count: library.trashedProjects.length, Icon: Trash },
+    { path: '/', label: t('library.allProjects'), count: library.projects.length, Icon: LayoutGrid },
+    { path: '/trash', label: t('library.trash'), count: library.trashedProjects.length, Icon: Trash },
   ];
 
   function startNewFolder() {
@@ -61,10 +63,10 @@ export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: 
               className={`flex h-9 w-full items-center gap-2.5 rounded-lg px-3 text-sm text-ink-muted transition-colors duration-150 hover:text-ink ${FOCUS_RING}`}
             >
               <ChevronRight className={`size-4 shrink-0 transition-transform duration-200 ${isFolderListOpen ? 'rotate-90' : ''}`} />
-              文件夹
+              {t('folder.list')}
             </button>
           </h2>
-          <button type="button" onClick={startNewFolder} aria-label="新建文件夹" title="新建文件夹" className={iconButtonClass()}>
+          <button type="button" onClick={startNewFolder} aria-label={t('folder.new')} title={t('folder.new')} className={iconButtonClass()}>
             <Plus />
           </button>
         </div>
@@ -83,7 +85,7 @@ export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: 
               <FolderIcon className="size-4 shrink-0 text-ink-muted" />
               <InlineNameInput
                 initialName=""
-                label="新文件夹名称"
+                label={t('folder.newName')}
                 onSubmit={name => void library.createFolder(name)}
                 onFinish={() => setIsNamingNewFolder(false)}
                 className="-ml-1.5 flex-1"
@@ -91,13 +93,13 @@ export function LibrarySidebar({ library, isCreatingProject, onCreateProject }: 
             </div>
           )}
           {library.folders.length === 0 && !isNamingNewFolder && (
-            <p className="px-3 py-1.5 text-xs text-ink-faint">还没有文件夹</p>
+            <p className="px-3 py-1.5 text-xs text-ink-faint">{t('folder.empty')}</p>
           )}
         </nav>
       </section>
       <button type="button" onClick={onCreateProject} disabled={isCreatingProject} className={`${buttonClass('primary', 'xl')} mt-auto w-full`}>
         <Plus />
-        新建图表
+        {t('library.newProject')}
       </button>
     </aside>
   );

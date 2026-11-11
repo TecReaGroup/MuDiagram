@@ -2,6 +2,7 @@ import { Folder as FolderIcon, Pencil, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { NavLink, useMatch } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
+import { useI18n } from '../../shared/i18n/language-context';
 import { iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
 
@@ -13,6 +14,7 @@ type FolderNavItemProps = {
 };
 
 export function FolderNavItem({ folder, projectCount, onRename, onDelete }: FolderNavItemProps) {
+  const { t } = useI18n();
   const [isRenaming, setIsRenaming] = useState(false);
   const path = `/folder/${folder.id}`;
   // The actions sit beside the link (buttons cannot nest inside <a>), so they need the active state too.
@@ -25,7 +27,7 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
         <FolderIcon className="size-4 shrink-0 text-ink-muted" />
         <InlineNameInput
           initialName={folder.name}
-          label="文件夹名称"
+          label={t('folder.name')}
           onSubmit={name => onRename(folder, name)}
           onFinish={() => setIsRenaming(false)}
           className="-ml-1.5 flex-1"
@@ -35,7 +37,7 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
   }
 
   function confirmDelete() {
-    if (window.confirm(`删除文件夹「${folder.name}」？其中的图表不会被删除。`)) onDelete(folder);
+    if (window.confirm(t('folder.confirmDelete', { name: folder.name }))) onDelete(folder);
   }
 
   return (
@@ -46,10 +48,10 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
         <span className={`${NAV_ITEM_COUNT_CLASS} group-hover/folder:invisible group-focus-within/folder:invisible`}>{projectCount}</span>
       </NavLink>
       <div className="absolute inset-y-0 right-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100 focus-within:opacity-100">
-        <button type="button" onClick={() => setIsRenaming(true)} aria-label="重命名文件夹" title="重命名" className={iconButtonClass(actionTone, 'sm')}>
+        <button type="button" onClick={() => setIsRenaming(true)} aria-label={t('folder.rename')} title={t('common.rename')} className={iconButtonClass(actionTone, 'sm')}>
           <Pencil />
         </button>
-        <button type="button" onClick={confirmDelete} aria-label="删除文件夹" title="删除" className={iconButtonClass(isActive ? 'inverse' : 'danger', 'sm')}>
+        <button type="button" onClick={confirmDelete} aria-label={t('folder.delete')} title={t('folder.deleteShort')} className={iconButtonClass(isActive ? 'inverse' : 'danger', 'sm')}>
           <Trash />
         </button>
       </div>

@@ -1,19 +1,21 @@
 import { useLibraryOutlet } from '../../features/project-library/library-outlet';
 import { matchesSearch } from '../../features/project-library/library-view';
 import { TrashedProjectCard } from '../../features/project-library/TrashedProjectCard';
+import { useI18n } from '../../shared/i18n/language-context';
 
 export function TrashPage() {
+  const { t } = useI18n();
   const { library, searchText } = useLibraryOutlet();
   const visibleProjects = library.trashedProjects.filter(project => matchesSearch(project, searchText));
 
   return (
     <>
-      <h1 className="text-lg font-semibold tracking-[-0.01em]">回收站</h1>
-      <p className="mt-1 text-sm text-ink-muted">删除的图表会在这里保留一段时间，到期后自动彻底删除。</p>
+      <h1 className="text-lg font-semibold tracking-[-0.01em]">{t('library.trash')}</h1>
+      <p className="mt-1 text-sm text-ink-muted">{t('trash.description')}</p>
 
       {visibleProjects.length === 0 && (
         <p className="mt-16 text-center text-sm text-ink-muted">
-          {library.trashedProjects.length === 0 ? '回收站是空的。' : '没有符合条件的图表。'}
+          {t(library.trashedProjects.length === 0 ? 'trash.empty' : 'common.noMatchingProject')}
         </p>
       )}
 

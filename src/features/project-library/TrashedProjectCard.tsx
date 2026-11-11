@@ -1,5 +1,6 @@
 import { RotateCcw, Trash } from 'lucide-react';
 import type { TrashedProject } from '../../entities/project/project-api';
+import { useI18n, type I18n } from '../../shared/i18n/language-context';
 import { iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 import { ProjectPreview } from './ProjectPreview';
 
@@ -11,14 +12,19 @@ type TrashedProjectCardProps = {
   onDeletePermanently: (project: TrashedProject) => void;
 };
 
-function describePurgeTime(purgeAt: string): string {
+function describePurgeTime(purgeAt: string, { language, t }: I18n): string {
   const remainingDays = Math.ceil((Date.parse(purgeAt) - Date.now()) / DAY_MS);
-  return remainingDays > 0 ? `${remainingDays} 天后彻底删除` : '即将彻底删除';
+  if (remainingDays <= 0) return t('trash.purgeSoon');
+  const when = new Intl.RelativeTimeFormat(language, { numeric: 'auto' }).format(remainingDays, 'day');
+  return t('trash.purgeIn', { when });
 }
 
 export function TrashedProjectCard({ project, onRestore, onDeletePermanently }: TrashedProjectCardProps) {
+  const i18n = useI18n();
+  const { t } = i18n;
+
   function confirmDelete() {
-    if (window.confirm(`彻底删除图表「${project.name}」？此操作无法撤销。`)) onDeletePermanently(project);
+    if (window.confirm(t('trash.confirmDelete', { name: project.name }))) onDeletePermanently(project);
   }
 
   return (
@@ -29,13 +35,13 @@ export function TrashedProjectCard({ project, onRestore, onDeletePermanently }: 
       <div className="flex items-center gap-2 px-2 pt-3 pb-1.5">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium text-ink">{project.name}</p>
-          <time dateTime={project.purgeAt} className="mt-0.5 block text-xs text-ink-faint">{describePurgeTime(project.purgeAt)}</time>
+          <time dateTime={project.purgeAt} className="mt-0.5 block text-xs text-ink-faint">{describePurgeTime(project.purgeAt, i18n)}</time>
         </div>
         <div className="flex gap-0.5 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
-          <button type="button" onClick={() => onRestore(project)} aria-label="恢复" title="恢复" className={iconButtonClass('ghost', 'sm')}>
+          <button type="button" onClick={() => onRestore(project)} aria-label={t('trash.restore')} title={t('trash.restore')} className={iconButtonClass('ghost', 'sm')}>
             <RotateCcw />
           </button>
-          <button type="button" onClick={confirmDelete} aria-label="彻底删除" title="彻底删除" className={iconButtonClass('danger', 'sm')}>
+          <button type="button" onClick={confirmDelete} aria-label={t('trash.deletePermanently')} title={t('trash.deletePermanently')} className={iconButtonClass('danger', 'sm')}>
             <Trash />
           </button>
         </div>

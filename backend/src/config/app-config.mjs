@@ -5,7 +5,7 @@ import { parse } from 'smol-toml';
 
 const REPOSITORY_ROOT = fileURLToPath(new URL('../../../', import.meta.url));
 const CONFIG_FILE = resolve(REPOSITORY_ROOT, 'config/config.toml');
-const UI_LANGUAGES = ['zh-CN', 'en-US'];
+export const UI_LANGUAGES = ['zh-CN', 'en-US'];
 
 function readSection(config, name) {
   const section = config[name];
@@ -33,6 +33,7 @@ function loadAppConfig() {
     storage: {
       projectRoot: resolve(REPOSITORY_ROOT, String(storage.project_root)),
       folderFile: resolve(REPOSITORY_ROOT, String(storage.folder_file)),
+      settingFile: resolve(REPOSITORY_ROOT, String(storage.setting_file)),
     },
     trash: {
       retentionDays,
