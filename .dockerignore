@@ -5,6 +5,7 @@
 .vite-dev.log
 Dockerfile
 compose.yaml
+compose.yaml.example
 node_modules
 dist
 public/drawio

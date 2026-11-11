@@ -10,7 +10,6 @@ public/drawio/
 
 # Local environment files
 .env
-.env.*
 
 # Logs
 *.log
@@ -46,3 +45,6 @@ temp/*
 !backend/data/folder/.gitkeep
 /backend/data/setting/*
 !backend/data/setting/.gitkeep
+
+# Server-specific compose (holds the tunnel token); copy from compose.yaml.example
+compose.yaml
