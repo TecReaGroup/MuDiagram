@@ -1,0 +1,16 @@
+[storage]
+# Directory holding one folder per project (relative to the repository root)
+project_root = "./backend/data/project"
+
+[ai]
+# Options: "anthropic" | "openai"
+# "openai" uses the Chat Completions API, so it also works with any
+# OpenAI-compatible endpoint (DeepSeek, OpenRouter, Ollama, ...) via base_url.
+provider = "anthropic"
+model = "claude-sonnet-5-5"
+# Leave empty to use the provider's official endpoint
+base_url = ""
+# Name of the environment variable that holds the API key
+api_key_env = "AI_API_KEY"
+# Upper bound of tokens the model may generate per reply
+max_output_tokens = 16000
