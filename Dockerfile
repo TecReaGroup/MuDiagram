@@ -17,6 +17,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
+RUN apk add --no-cache su-exec
+
 COPY package*.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
@@ -25,9 +27,9 @@ COPY --from=builder --chown=node:node /runtime-data ./backend/data
 COPY --chown=node:node backend/server.mjs ./backend/server.mjs
 COPY --chown=node:node backend/src ./backend/src
 COPY --chown=node:node config ./config
-
-USER node
+COPY --chmod=755 script/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 8787
 
+ENTRYPOINT ["docker-entrypoint.sh"]
 CMD ["node", "backend/server.mjs"]

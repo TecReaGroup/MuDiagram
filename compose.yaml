@@ -9,6 +9,7 @@ services:
     volumes:
       - ./backend/data/log:/app/backend/data/log
       - ./backend/data/project:/app/backend/data/project
+      - ./backend/data/folder:/app/backend/data/folder
       - ./backend/data/setting:/app/backend/data/setting
       - ./config:/app/config:ro
     environment:
