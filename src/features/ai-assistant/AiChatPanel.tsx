@@ -222,7 +222,7 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
           onPaste={event => void attachPastedImages(event)}
           rows={2}
           placeholder={t('ai.inputPlaceholder')}
-          className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-chat text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
+          className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-chat text-ink outline-none field-sizing-content placeholder:text-ink-faint"
         />
         <div className="flex items-center justify-between py-1.5 pr-1.5 pl-3">
           <span className="text-2xs text-ink-faint">{t('ai.inputHint')}</span>
