@@ -1,5 +1,5 @@
 import { ChevronRight, CloudCheck, Share2, Sparkle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { listFolders, type Folder } from '../../entities/folder/folder-api';
 import { getProject, type Project } from '../../entities/project/project-api';
@@ -9,18 +9,15 @@ import { SharePanel } from '../../features/project-share/SharePanel';
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { buttonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
-import { useDismiss } from '../../shared/ui/use-dismiss';
+import { usePopover } from '../../shared/ui/use-popover';
 
 export function EditorPage() {
   const { t } = useI18n();
   const { projectId = '' } = useParams();
   const [project, setProject] = useState<Project | null>(null);
   const [folder, setFolder] = useState<Folder | null>(null);
-  const [isSharePanelOpen, setIsSharePanelOpen] = useState(false);
   const canvasRef = useRef<DiagramCanvasHandle>(null);
-  const shareRootRef = useRef<HTMLDivElement>(null);
-  const closeSharePanel = useCallback(() => setIsSharePanelOpen(false), []);
-  useDismiss(shareRootRef, isSharePanelOpen, closeSharePanel);
+  const sharePopover = usePopover<HTMLDivElement>();
   const isShared = project?.shareToken != null;
 
   useEffect(() => {
@@ -47,7 +44,7 @@ export function EditorPage() {
         <Link to="/" aria-label={t('editor.backToLibrary')} className="rounded-lg p-0.5 transition-opacity hover:opacity-80">
           <BrandMark className="size-6" />
         </Link>
-        <nav className="flex min-w-0 items-center gap-0.5 text-[13px]">
+        <nav className="flex min-w-0 items-center gap-0.5 text-ui">
           <Link
             to={folder ? `/folder/${folder.id}` : '/'}
             className="hidden max-w-48 truncate rounded-md px-1.5 py-1 text-ink-muted transition-colors hover:bg-hover hover:text-ink sm:block"
@@ -55,7 +52,7 @@ export function EditorPage() {
             {folder?.name ?? t('library.allProjects')}
           </Link>
           <ChevronRight className="hidden size-3.5 shrink-0 text-ink-faint sm:block" />
-          <h1 className="truncate px-1.5 text-[13px] font-medium">{project?.name}</h1>
+          <h1 className="truncate px-1.5 text-ui font-medium">{project?.name}</h1>
         </nav>
         <span className="flex shrink-0 items-center gap-1 text-xs text-ink-faint" title={t('editor.allChangesSaved')}>
           <CloudCheck className="size-3.5" />
@@ -63,18 +60,18 @@ export function EditorPage() {
         </span>
 
         <div className="ml-auto flex items-center gap-1.5">
-          <div ref={shareRootRef} className="relative">
+          <div ref={sharePopover.rootRef} className="relative">
             <button
               type="button"
-              onClick={() => setIsSharePanelOpen(open => !open)}
-              aria-expanded={isSharePanelOpen}
+              onClick={sharePopover.toggle}
+              aria-expanded={sharePopover.isOpen}
               className={`relative ${buttonClass('secondary')}`}
             >
               <Share2 />
               {t('editor.share')}
               {isShared && <span className="absolute top-1 right-1 size-1.5 rounded-full bg-success" aria-label={t('editor.isPublic')} />}
             </button>
-            {isSharePanelOpen && project && (
+            {sharePopover.isOpen && project && (
               <div className="absolute top-10 right-0 z-30 origin-top-right animate-pop-in">
                 <SharePanel project={project} onProjectChange={setProject} />
               </div>

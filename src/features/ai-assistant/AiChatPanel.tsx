@@ -134,7 +134,7 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
   return (
     <aside className={`${SURFACE_CARD_CLASS} relative flex h-full w-full flex-col max-lg:shadow-pop`}>
       <header className="flex h-12 shrink-0 items-center gap-2 border-b border-line pr-2 pl-4">
-        <span className="flex-1 text-[13px] font-semibold">{t('ai.assistant')}</span>
+        <span className="flex-1 text-ui font-semibold">{t('ai.assistant')}</span>
         <ChatHistoryMenu
           projectId={projectId}
           currentChatId={chatId}
@@ -150,9 +150,9 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
         </button>
       </header>
 
-      <div ref={scrollRef} className="scrollbar-subtle flex-1 space-y-5 overflow-y-auto px-4 py-5 text-[13.5px] leading-relaxed">
+      <div ref={scrollRef} className="scrollbar-subtle flex-1 space-y-5 overflow-y-auto px-4 py-5 text-chat leading-relaxed">
         {messages.length === 0 && (
-          <p className="px-4 pt-8 text-center text-[13px] text-ink-faint">{t('ai.emptyHint')}</p>
+          <p className="px-4 pt-8 text-center text-ui text-ink-faint">{t('ai.emptyHint')}</p>
         )}
         {messages.map(message => (
           <ChatMessage key={message.id} message={message} checkpoints={checkpoints} onPreviewCheckpoint={setPreviewedCheckpointXml} />
@@ -164,7 +164,7 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
           </div>
         )}
         {error && (
-          <p className="animate-fade-in rounded-lg bg-danger-soft px-3 py-2 text-[13px] wrap-break-word text-danger">{error.message}</p>
+          <p className="animate-fade-in rounded-lg bg-danger-soft px-3 py-2 text-ui wrap-break-word text-danger">{error.message}</p>
         )}
       </div>
 
@@ -175,10 +175,10 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
           onKeyDown={submitOnEnter}
           rows={2}
           placeholder={t('ai.inputPlaceholder')}
-          className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-[13.5px] text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
+          className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-chat text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
         />
         <div className="flex items-center justify-between py-1.5 pr-1.5 pl-3">
-          <span className="text-[11px] text-ink-faint">{t('ai.inputHint')}</span>
+          <span className="text-2xs text-ink-faint">{t('ai.inputHint')}</span>
           {isBusy ? (
             <button type="button" onClick={() => void stop()} aria-label={t('ai.stop')} title={t('ai.stop')} className={SEND_BUTTON_CLASS}>
               <Square className="size-3 fill-current" />

@@ -9,6 +9,7 @@ import { SiteSettingsButton } from '../../features/site-settings/SiteSettingsBut
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { FIELD_FOCUS_CLASS, iconButtonClass } from '../../shared/ui/control-class';
+import { PAGE_STATUS_CLASS } from '../../shared/ui/text-class';
 
 /** Shell shared by all projects, a folder and the trash: sidebar, search, and the library state. */
 export function LibraryLayout() {
@@ -76,7 +77,7 @@ export function LibraryLayout() {
             {library.failure && (
               <p role="alert" className="mb-5 rounded-lg border border-danger/25 bg-danger-soft px-3.5 py-3 text-sm text-danger">{library.failure}</p>
             )}
-            {library.isLoading ? <p className="mt-16 text-center text-sm text-ink-muted">{t('common.loading')}</p> : <Outlet context={outletContext} />}
+            {library.isLoading ? <p className={PAGE_STATUS_CLASS}>{t('common.loading')}</p> : <Outlet context={outletContext} />}
           </div>
         </div>
       </main>

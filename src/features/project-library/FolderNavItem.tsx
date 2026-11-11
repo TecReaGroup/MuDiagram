@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { NavLink, useMatch } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
 import { useI18n } from '../../shared/i18n/language-context';
-import { iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
+import { HOVER_REVEAL_CLASS, iconButtonClass, NAV_ITEM_CLASS, NAV_ITEM_COUNT_CLASS } from '../../shared/ui/control-class';
 import { ConfirmDeleteButton } from '../../shared/ui/ConfirmDeleteButton';
 import { InlineNameInput } from '../../shared/ui/InlineNameInput';
 
@@ -38,13 +38,13 @@ export function FolderNavItem({ folder, projectCount, onRename, onDelete }: Fold
   }
 
   return (
-    <div className="group/folder relative">
+    <div className="group relative">
       <NavLink to={path} className={NAV_ITEM_CLASS}>
         <FolderIcon />
         <span className="truncate pr-14">{folder.name}</span>
-        <span className={`${NAV_ITEM_COUNT_CLASS} group-hover/folder:invisible group-focus-within/folder:invisible`}>{projectCount}</span>
+        <span className={`${NAV_ITEM_COUNT_CLASS} group-hover:invisible group-focus-within:invisible [@media(hover:none)]:invisible`}>{projectCount}</span>
       </NavLink>
-      <div className="absolute inset-y-0 right-1 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/folder:opacity-100 focus-within:opacity-100">
+      <div className={`${HOVER_REVEAL_CLASS} absolute inset-y-0 right-1 flex items-center gap-0.5`}>
         <button type="button" onClick={() => setIsRenaming(true)} aria-label={t('folder.rename')} title={t('common.rename')} className={iconButtonClass(actionTone, 'sm')}>
           <Pencil />
         </button>

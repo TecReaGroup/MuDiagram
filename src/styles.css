@@ -33,12 +33,27 @@
   --shadow-card: 0 1px 2px rgb(23 23 28 / 0.04), 0 4px 16px -6px rgb(23 23 28 / 0.08);
   --shadow-pop: 0 0 0 1px rgb(23 23 28 / 0.05), 0 2px 4px rgb(23 23 28 / 0.04), 0 16px 40px -12px rgb(23 23 28 / 0.2);
 
+  /* Type steps between Tailwind's xs (12px) and sm (14px) that dense UI needs; no line-height,
+     so they inherit body's 1.55 like the arbitrary values they replace. */
+  --text-2xs: 11px;
+  --text-ui: 13px;
+  --text-chat: 13.5px;
+
+  /* Every `transition-*` uses these unless a duration is given: 150ms for color/border/opacity,
+     `duration-200` for movement, `duration-300` only for large surfaces fading in. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: var(--ease-out);
 
   --animate-fade-in: fade-in 0.24s var(--ease-out) both;
   --animate-pop-in: pop-in 0.18s var(--ease-out) both;
   --animate-panel-in: panel-in 0.3s var(--ease-out) both;
+  /* Opacity only: a translating backdrop would expose the page edge. */
+  --animate-backdrop-in: backdrop-in 0.2s var(--ease-out) both;
 
+  @keyframes backdrop-in {
+    from { opacity: 0; }
+  }
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }

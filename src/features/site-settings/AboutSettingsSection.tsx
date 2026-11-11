@@ -17,7 +17,7 @@ export function AboutSettingsSection() {
       <BrandMark className="size-11" />
       <div>
         <div className="text-[15px] font-semibold tracking-[-0.02em]">MuDiagram</div>
-        <div className="text-[13px] text-ink-muted">{t('settings.about.tagline')}</div>
+        <div className="text-ui text-ink-muted">{t('settings.about.tagline')}</div>
       </div>
     </a>
   );

@@ -2,6 +2,7 @@ import { useLibraryOutlet } from '../../features/project-library/library-outlet'
 import { matchesSearch } from '../../features/project-library/library-view';
 import { TrashedProjectCard } from '../../features/project-library/TrashedProjectCard';
 import { useI18n } from '../../shared/i18n/language-context';
+import { PAGE_STATUS_CLASS, PAGE_TITLE_CLASS } from '../../shared/ui/text-class';
 
 export function TrashPage() {
   const { t } = useI18n();
@@ -10,11 +11,11 @@ export function TrashPage() {
 
   return (
     <>
-      <h1 className="text-lg font-semibold tracking-[-0.01em]">{t('library.trash')}</h1>
+      <h1 className={PAGE_TITLE_CLASS}>{t('library.trash')}</h1>
       <p className="mt-1 text-sm text-ink-muted">{t('trash.description')}</p>
 
       {visibleProjects.length === 0 && (
-        <p className="mt-16 text-center text-sm text-ink-muted">
+        <p className={PAGE_STATUS_CLASS}>
           {t(library.trashedProjects.length === 0 ? 'trash.empty' : 'common.noMatchingProject')}
         </p>
       )}

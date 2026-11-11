@@ -2,7 +2,7 @@ import { RotateCcw, Trash } from 'lucide-react';
 import type { TrashedProject } from '../../entities/project/project-api';
 import { useI18n, type I18n } from '../../shared/i18n/language-context';
 import { ConfirmDeleteButton } from '../../shared/ui/ConfirmDeleteButton';
-import { iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
+import { HOVER_REVEAL_CLASS, iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 import { ProjectPreview } from './ProjectPreview';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -34,7 +34,7 @@ export function TrashedProjectCard({ project, onRestore, onDeletePermanently }: 
           <p className="truncate text-sm font-medium text-ink">{project.name}</p>
           <time dateTime={project.purgeAt} className="mt-0.5 block text-xs text-ink-faint">{describePurgeTime(project.purgeAt, i18n)}</time>
         </div>
-        <div className="flex gap-0.5 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className={`${HOVER_REVEAL_CLASS} flex gap-0.5`}>
           <button type="button" onClick={() => onRestore(project)} aria-label={t('trash.restore')} title={t('trash.restore')} className={iconButtonClass('ghost', 'sm')}>
             <RotateCcw />
           </button>

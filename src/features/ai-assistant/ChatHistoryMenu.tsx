@@ -4,7 +4,7 @@ import { useI18n } from '../../shared/i18n/language-context';
 import { log, serializeError } from '../../shared/lib/logger';
 import { formatRelativeTime } from '../../shared/lib/relative-time';
 import { ConfirmDeleteButton } from '../../shared/ui/ConfirmDeleteButton';
-import { iconButtonClass, MENU_ITEM_CLASS, MENU_PANEL_CLASS } from '../../shared/ui/control-class';
+import { HOVER_REVEAL_CLASS, iconButtonClass, MENU_ITEM_CLASS, MENU_PANEL_CLASS } from '../../shared/ui/control-class';
 import { useDismiss } from '../../shared/ui/use-dismiss';
 import { listChats, type ChatSummary } from './chat-history-api';
 
@@ -70,11 +70,11 @@ export function ChatHistoryMenu({ projectId, currentChatId, isDisabled, onOpenCh
 
       {chatSummaries && (
         <div role="menu" aria-label={t('ai.history')} className={`${MENU_PANEL_CLASS} scrollbar-subtle absolute inset-x-2 top-13 max-h-80 origin-top overflow-y-auto`}>
-          {chatSummaries.length === 0 && <p className="px-2.5 py-2 text-[13px] text-ink-faint">{t('ai.historyEmpty')}</p>}
+          {chatSummaries.length === 0 && <p className="px-2.5 py-2 text-ui text-ink-faint">{t('ai.historyEmpty')}</p>}
           {chatSummaries.map(chatSummary => {
             const title = chatSummary.title || t('ai.untitledChat');
             return (
-              <div key={chatSummary.id} className="group/chat relative">
+              <div key={chatSummary.id} className="group relative">
                 <button
                   type="button"
                   role="menuitemradio"
@@ -83,9 +83,9 @@ export function ChatHistoryMenu({ projectId, currentChatId, isDisabled, onOpenCh
                   className={`${MENU_ITEM_CLASS} flex h-auto flex-col items-start gap-0.5 py-1.5 pr-9 text-left`}
                 >
                   <span className="w-full truncate">{title}</span>
-                  <span className="text-[11px] font-normal text-ink-faint">{formatRelativeTime(chatSummary.updatedAt, i18n)}</span>
+                  <span className="text-2xs font-normal text-ink-faint">{formatRelativeTime(chatSummary.updatedAt, i18n)}</span>
                 </button>
-                <div className="absolute inset-y-0 right-1 flex items-center opacity-0 transition-opacity group-hover/chat:opacity-100 focus-within:opacity-100">
+                <div className={`${HOVER_REVEAL_CLASS} absolute inset-y-0 right-1 flex items-center`}>
                   <ConfirmDeleteButton
                     label={t('ai.deleteChat')}
                     title={t('ai.confirmDeleteChatTitle')}

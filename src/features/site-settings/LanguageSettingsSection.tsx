@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import { useI18n } from '../../shared/i18n/language-context';
 import { LANGUAGE_NATIVE_NAMES, LANGUAGES } from '../../shared/i18n/message';
+import { FOCUS_RING } from '../../shared/ui/control-class';
 
 export function LanguageSettingsSection() {
   const { language, t, changeLanguage } = useI18n();
@@ -16,7 +17,7 @@ export function LanguageSettingsSection() {
             role="radio"
             aria-checked={isSelected}
             onClick={() => !isSelected && changeLanguage(option)}
-            className={`flex w-full items-center gap-3 rounded-xl border bg-surface px-4 py-3 text-left transition-[border-color,box-shadow] ${isSelected ? 'border-line-strong shadow-card' : 'border-line hover:border-line-strong'}`}
+            className={`flex w-full items-center gap-3 rounded-xl border bg-surface px-4 py-3 text-left transition-[border-color,box-shadow] ${FOCUS_RING} ${isSelected ? 'border-line-strong shadow-card' : 'border-line hover:border-line-strong'}`}
           >
             <span className="min-w-0 flex-1">
               <span lang={option} className="block text-sm font-medium text-ink">{LANGUAGE_NATIVE_NAMES[option]}</span>

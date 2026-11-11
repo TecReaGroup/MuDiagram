@@ -1,7 +1,8 @@
 import { Info, Languages, Settings, Sparkle, X } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
-import { iconButtonClass, MODAL_DIALOG_CLASS, NAV_ITEM_CLASS } from '../../shared/ui/control-class';
+import { iconButtonClass, NAV_ITEM_CLASS } from '../../shared/ui/control-class';
+import { Modal } from '../../shared/ui/Modal';
 import { AboutSettingsSection } from './AboutSettingsSection';
 import { AiModelSettingsSection } from './AiModelSettingsSection';
 import { LanguageSettingsSection } from './LanguageSettingsSection';
@@ -16,26 +17,27 @@ type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]['id'];
 
 export function SiteSettingsButton() {
   const { t } = useI18n();
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const titleId = useId();
+  const close = () => setIsOpen(false);
   const [activeSectionId, setActiveSectionId] = useState<SettingsSectionId>(SETTINGS_SECTIONS[0].id);
   const activeSection = SETTINGS_SECTIONS.find(section => section.id === activeSectionId) ?? SETTINGS_SECTIONS[0];
 
   return (
     <>
-      <button type="button" onClick={() => dialogRef.current?.showModal()} aria-label={t('settings.title')} title={t('settings.title')} className={iconButtonClass('ghost', 'xl')}>
+      <button type="button" onClick={() => setIsOpen(true)} aria-label={t('settings.title')} title={t('settings.title')} className={iconButtonClass('ghost', 'xl')}>
         <Settings />
       </button>
 
-      <dialog
-        ref={dialogRef}
-        aria-labelledby="site-settings-title"
-        // A click whose target is the <dialog> itself landed on the backdrop.
-        onClick={event => event.target === dialogRef.current && dialogRef.current.close()}
-        className={`${MODAL_DIALOG_CLASS} h-[min(760px,calc(100vh-48px))] w-[min(1120px,calc(100vw-48px))] overflow-hidden p-0`}
+      <Modal
+        isOpen={isOpen}
+        onClose={close}
+        labelledBy={titleId}
+        className="h-[min(760px,calc(100vh-48px))] w-[min(1120px,calc(100vw-48px))] overflow-hidden p-0"
       >
         <div className="flex h-full flex-col sm:flex-row">
           <aside className="shrink-0 border-b border-line bg-canvas p-3 sm:w-64 sm:border-r sm:border-b-0 sm:p-5">
-            <h2 id="site-settings-title" className="px-3 pt-1 pb-5 text-xl font-semibold max-sm:hidden">{t('settings.title')}</h2>
+            <h2 id={titleId} className="px-3 pt-1 pb-5 text-xl font-semibold max-sm:hidden">{t('settings.title')}</h2>
             <nav className="flex gap-1 sm:flex-col">
               {SETTINGS_SECTIONS.map(({ id, titleKey, Icon }) => {
                 const isActive = id === activeSectionId;
@@ -56,7 +58,7 @@ export function SiteSettingsButton() {
           </aside>
 
           <section className="relative min-h-0 flex-1 overflow-y-auto px-6 py-8 scrollbar-subtle sm:px-14 sm:py-14">
-            <button type="button" onClick={() => dialogRef.current?.close()} aria-label={t('common.close')} className={`${iconButtonClass()} absolute top-5 right-5`}>
+            <button type="button" onClick={close} aria-label={t('common.close')} className={`${iconButtonClass()} absolute top-5 right-5`}>
               <X />
             </button>
             <div key={activeSection.id} className="max-w-xl animate-fade-in">
@@ -68,7 +70,7 @@ export function SiteSettingsButton() {
             </div>
           </section>
         </div>
-      </dialog>
+      </Modal>
     </>
   );
 }

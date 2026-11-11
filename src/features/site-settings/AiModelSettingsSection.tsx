@@ -93,7 +93,7 @@ function ModelTestMessage({ status }: { status: ModelTestStatus }) {
   const { t } = useI18n();
   if (status.kind === 'passed') {
     return (
-      <p className="flex items-center gap-1.5 text-[13px] text-success">
+      <p className="flex items-center gap-1.5 text-ui text-success">
         <Check className="size-4 shrink-0" />
         {t('settings.ai.testPassed', { latencyMs: status.latencyMs })}
       </p>
@@ -101,7 +101,7 @@ function ModelTestMessage({ status }: { status: ModelTestStatus }) {
   }
   if (status.kind === 'failed') {
     return (
-      <p className="flex min-w-0 items-center gap-1.5 text-[13px] text-danger" title={status.message}>
+      <p className="flex min-w-0 items-center gap-1.5 text-ui text-danger" title={status.message}>
         <CircleExclamationPoint className="size-4 shrink-0" />
         <span className="truncate">{status.message}</span>
       </p>

@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
 import { buttonClass } from '../../shared/ui/control-class';
 import { Modal } from '../../shared/ui/Modal';
+import { DIALOG_TITLE_CLASS } from '../../shared/ui/text-class';
 import { DiagramPreview } from '../diagram-editor/DiagramPreview';
 
 type CheckpointPreviewModalProps = {
@@ -31,7 +32,7 @@ export function CheckpointPreviewModal({ checkpointXml, onClose, onRestore }: Ch
       {/* Layout lives on this wrapper: `flex` on the <dialog> would override its closed `display: none`. */}
       <div className="flex h-full flex-col gap-4">
         <div>
-          <h2 id={titleId} className="text-base font-semibold">{t('ai.checkpointTitle')}</h2>
+          <h2 id={titleId} className={DIALOG_TITLE_CLASS}>{t('ai.checkpointTitle')}</h2>
           <p className="mt-1 text-sm text-ink-muted">{t('ai.checkpointDescription')}</p>
         </div>
         <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-line">

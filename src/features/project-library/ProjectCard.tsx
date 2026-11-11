@@ -4,7 +4,7 @@ import type { Folder } from '../../entities/folder/folder-api';
 import type { Project } from '../../entities/project/project-api';
 import { useI18n } from '../../shared/i18n/language-context';
 import { formatRelativeTime } from '../../shared/lib/relative-time';
-import { SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
+import { HOVER_REVEAL_CLASS, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
 import { ProjectEditDialog } from './ProjectEditDialog';
 import { ProjectPreview } from './ProjectPreview';
 import type { ProjectSettings } from './use-project-library';
@@ -39,7 +39,7 @@ export function ProjectCard({ project, folders, onEdit, onMoveToTrash }: Project
             <time dateTime={project.updatedAt}>{t('project.edited', { time: formatRelativeTime(project.updatedAt, i18n) })}</time>
           </div>
         </div>
-        <div className="relative z-10 transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
+        <div className={`${HOVER_REVEAL_CLASS} relative z-10`}>
           <ProjectEditDialog
             project={project}
             folders={folders}

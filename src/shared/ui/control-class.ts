@@ -12,16 +12,20 @@ export const FOCUS_RING = 'outline-none focus-visible:ring-2 focus-visible:ring-
 // Applies to a text input itself or to a wrapper around one (:focus-within matches both).
 export const FIELD_FOCUS_CLASS = 'transition-[border-color,background-color,box-shadow] duration-150 focus-within:border-brand/50 focus-within:ring-4 focus-within:ring-brand/10';
 
-export const FIELD_INPUT_CLASS = `h-10 w-full rounded-xl border border-line bg-surface px-3.5 text-[13px] text-ink outline-none placeholder:text-ink-faint hover:border-line-strong ${FIELD_FOCUS_CLASS}`;
+export const FIELD_INPUT_CLASS = `h-10 w-full rounded-xl border border-line bg-surface px-3.5 text-ui text-ink outline-none placeholder:text-ink-faint hover:border-line-strong ${FIELD_FOCUS_CLASS}`;
 
 // An option in a form field's dropdown: same type as FIELD_INPUT_CLASS so the open list reads as the
 // field's own values; selection shows as a background plus a check icon, never as a weight change.
-export const FIELD_OPTION_CLASS = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-[13px] text-ink transition-colors hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-none aria-checked:bg-sunken';
+export const FIELD_OPTION_CLASS = 'flex h-8 w-full items-center gap-2 rounded-md px-2.5 text-left text-ui text-ink transition-colors hover:bg-sunken focus-visible:bg-sunken focus-visible:outline-none aria-checked:bg-sunken';
 
 export const SURFACE_CARD_CLASS = 'rounded-xl border border-line bg-surface shadow-xs';
 
 // For a native <dialog> opened with showModal(); callers add size and padding.
-export const MODAL_DIALOG_CLASS = 'm-auto rounded-2xl bg-surface text-ink shadow-pop backdrop:bg-ink/30 backdrop:backdrop-blur-[2px] open:animate-pop-in';
+export const MODAL_DIALOG_CLASS = 'm-auto rounded-2xl bg-surface text-ink shadow-pop backdrop:bg-ink/30 backdrop:backdrop-blur-[2px] open:animate-pop-in backdrop:animate-backdrop-in';
+
+// Secondary actions of a list row or card, shown while the nearest `group` ancestor is hovered or holds focus.
+// Always visible on touch screens, which have no hover to reveal them.
+export const HOVER_REVEAL_CLASS = 'transition-opacity [@media(hover:hover)]:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100';
 
 const CONTROL_BASE = `inline-flex shrink-0 select-none items-center justify-center whitespace-nowrap transition-[background-color,border-color,color,box-shadow,opacity] duration-150 disabled:pointer-events-none disabled:opacity-40 [&_svg]:shrink-0 ${FOCUS_RING}`;
 
@@ -36,8 +40,8 @@ const BUTTON_TONE_CLASS: Record<ButtonTone, string> = {
 };
 
 const BUTTON_SIZE_CLASS: Record<ButtonSize, string> = {
-  md: 'h-8 gap-1.5 rounded-lg px-3 text-[13px] font-medium [&_svg]:size-4',
-  lg: 'h-9 gap-1.5 rounded-lg px-4 text-[13px] font-medium [&_svg]:size-4',
+  md: 'h-8 gap-1.5 rounded-lg px-3 text-ui font-medium [&_svg]:size-4',
+  lg: 'h-9 gap-1.5 rounded-lg px-4 text-ui font-medium [&_svg]:size-4',
   xl: 'h-10 gap-1.5 rounded-xl px-4 text-sm font-medium [&_svg]:size-4',
 };
 

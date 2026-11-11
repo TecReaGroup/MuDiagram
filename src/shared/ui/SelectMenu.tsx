@@ -1,7 +1,7 @@
 import { Check, ChevronDown } from 'lucide-react';
-import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
+import type { KeyboardEvent } from 'react';
 import { FIELD_INPUT_CLASS, FIELD_OPTION_CLASS, MENU_PANEL_CLASS } from './control-class';
-import { useDismiss } from './use-dismiss';
+import { usePopover } from './use-popover';
 
 export type SelectOption<T> = { value: T; label: string };
 
@@ -13,10 +13,7 @@ type SelectMenuProps<T extends string | null> = {
 
 /** Styled replacement for a native <select>, whose option popup cannot be themed. */
 export function SelectMenu<T extends string | null>({ value, options, onChange }: SelectMenuProps<T>) {
-  const [isOpen, setIsOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => setIsOpen(false), []);
-  useDismiss(rootRef, isOpen, close);
+  const { rootRef, isOpen, toggle, close } = usePopover<HTMLDivElement>();
 
   const selectedLabel = options.find(option => option.value === value)?.label;
 
@@ -37,7 +34,7 @@ export function SelectMenu<T extends string | null>({ value, options, onChange }
     <div ref={rootRef} onKeyDown={closeOnEscape} className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen(open => !open)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={`${FIELD_INPUT_CLASS} flex items-center gap-2 text-left aria-expanded:border-brand/50 aria-expanded:ring-4 aria-expanded:ring-brand/10`}

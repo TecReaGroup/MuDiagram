@@ -1,8 +1,7 @@
 import { ListSortDescending, ChevronDown } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
-import { FOCUS_RING, MENU_ITEM_CLASS, MENU_PANEL_CLASS } from '../../shared/ui/control-class';
-import { useDismiss } from '../../shared/ui/use-dismiss';
+import { buttonClass, MENU_ITEM_CLASS, MENU_PANEL_CLASS } from '../../shared/ui/control-class';
+import { usePopover } from '../../shared/ui/use-popover';
 import { SORT_ORDERS, type SortOrderId } from './library-view';
 
 type SortMenuProps = {
@@ -12,10 +11,7 @@ type SortMenuProps = {
 
 export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
   const { t } = useI18n();
-  const [isOpen, setIsOpen] = useState(false);
-  const menuRootRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => setIsOpen(false), []);
-  useDismiss(menuRootRef, isOpen, close);
+  const { rootRef, isOpen, toggle, close } = usePopover<HTMLDivElement>();
 
   const selectOrder = (sortId: SortOrderId) => {
     onSelect(sortId);
@@ -23,15 +19,15 @@ export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
   };
 
   return (
-    <div ref={menuRootRef} className="relative">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
-        onClick={() => setIsOpen(open => !open)}
+        onClick={toggle}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className={`inline-flex h-8 items-center gap-2 rounded-lg px-2.5 text-sm transition-colors hover:bg-hover hover:text-ink ${FOCUS_RING} ${isOpen ? 'bg-hover text-ink' : 'text-ink-muted'}`}
+        className={`${buttonClass('ghost')} aria-expanded:bg-hover aria-expanded:text-ink`}
       >
-        <ListSortDescending className="size-4" />
+        <ListSortDescending />
         {/* All labels share one grid cell so the button keeps the longest label's width. */}
         <span className="inline-grid justify-items-center text-center">
           {SORT_ORDERS.map(order => (
@@ -40,7 +36,7 @@ export function SortMenu({ selectedId, onSelect }: SortMenuProps) {
             </span>
           ))}
         </span>
-        <ChevronDown className={`size-3.5 text-ink-faint transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`text-ink-faint transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
