@@ -1,5 +1,5 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { appConfig } from '../../config/app-config.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
@@ -43,18 +43,31 @@ async function withProjectLock(projectId, operation) {
   }
 }
 
+// Projects saved before `diagramSavedAt` existed: the SVG snapshot's mtime is when it was last saved.
+async function readLegacyDiagramSavedAt(projectId) {
+  try {
+    return (await stat(join(projectDirectory(projectId), DIAGRAM_RENDITIONS.svg.fileName))).mtime.toISOString();
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 // Fills fields added after the first release so older project.json files read like new ones.
-function normalizeProjectMeta(project) {
-  return { folderId: null, trashedAt: null, ...project };
+async function normalizeProjectMeta(project) {
+  const diagramSavedAt = project.diagramSavedAt === undefined ? await readLegacyDiagramSavedAt(project.id) : project.diagramSavedAt;
+  return { folderId: null, trashedAt: null, ...project, diagramSavedAt };
 }
 
 async function readProjectMeta(projectId) {
+  let project;
   try {
-    return normalizeProjectMeta(JSON.parse(await readFile(join(projectDirectory(projectId), PROJECT_META_FILE), 'utf8')));
+    project = JSON.parse(await readFile(join(projectDirectory(projectId), PROJECT_META_FILE), 'utf8'));
   } catch (error) {
     if (error?.code === 'ENOENT') throw new HttpError(404, 'Project not found');
     throw error;
   }
+  return normalizeProjectMeta(project);
 }
 
 async function writeProjectMeta(project) {
@@ -103,7 +116,7 @@ export async function listTrashedProjects() {
 
 export async function createProject(name, folderId) {
   const now = new Date().toISOString();
-  const project = { id: randomUUID(), name, folderId, createdAt: now, updatedAt: now, shareToken: null, trashedAt: null };
+  const project = { id: randomUUID(), name, folderId, createdAt: now, updatedAt: now, diagramSavedAt: null, shareToken: null, trashedAt: null };
   await mkdir(projectDirectory(project.id), { recursive: true });
   await writeFileAtomically(join(projectDirectory(project.id), DIAGRAM_RENDITIONS.drawio.fileName), EMPTY_DIAGRAM_XML);
   await writeProjectMeta(project);
@@ -170,7 +183,8 @@ export function saveDiagram(projectId, { xml, svg, png }) {
       writeFileAtomically(join(directory, DIAGRAM_RENDITIONS.svg.fileName), svg),
       writeFileAtomically(join(directory, DIAGRAM_RENDITIONS.png.fileName), png),
     ]);
-    const savedProject = { ...project, updatedAt: new Date().toISOString() };
+    const now = new Date().toISOString();
+    const savedProject = { ...project, updatedAt: now, diagramSavedAt: now };
     await writeProjectMeta(savedProject);
     return savedProject;
   });

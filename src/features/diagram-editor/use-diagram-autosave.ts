@@ -4,6 +4,8 @@ import { saveDiagram } from '../../entities/project/project-api';
 import { log, serializeError } from '../../shared/lib/logger';
 
 const AUTOSAVE_DEBOUNCE_MS = 800;
+// draw.io crops exports to the cells' geometry, which clips strokes, shadows and overflowing labels.
+const SNAPSHOT_BORDER_PX = 10;
 
 type SnapshotFormat = 'svg' | 'png';
 
@@ -22,7 +24,7 @@ export function useDiagramAutosave(projectId: string, editorRef: RefObject<DrawI
   const exportSnapshot = useCallback((format: SnapshotFormat) => new Promise<EventExport>(resolve => {
     pendingExportRef.current.set(format, resolve);
     // Shared renditions are embedded in third-party pages, so they must not carry a page background.
-    editorRef.current?.exportDiagram({ format, transparent: true });
+    editorRef.current?.exportDiagram({ format, transparent: true, border: String(SNAPSHOT_BORDER_PX) });
   }), [editorRef]);
 
   const saveLatestSnapshot = useCallback(async () => {

@@ -92,10 +92,27 @@
 }
 
 /*
+ * Scrollbar pseudo-elements can't transition themselves, so the thumb color lives in a
+ * registered property that the scroll container animates; the thumb fades in only while
+ * the pointer is over the container (wheel scrolling always implies hover).
+ */
+@property --scrollbar-thumb-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/*
  * Chromium ignores ::-webkit-scrollbar once scrollbar-width/color is set, and only the
  * pseudo-elements can drop the arrow buttons, so the standard properties are Firefox-only.
  */
 @utility scrollbar-subtle {
+  --scrollbar-thumb-color: transparent;
+  transition: --scrollbar-thumb-color 300ms ease;
+  &:hover,
+  &:focus-within {
+    --scrollbar-thumb-color: rgb(23 23 28 / 0.16);
+  }
   &::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -108,14 +125,14 @@
   }
   &::-webkit-scrollbar-thumb {
     border-radius: 9999px;
-    background: rgb(23 23 28 / 0.16);
+    background: var(--scrollbar-thumb-color);
   }
   &::-webkit-scrollbar-thumb:hover {
     background: rgb(23 23 28 / 0.28);
   }
   @supports (-moz-appearance: none) {
     scrollbar-width: thin;
-    scrollbar-color: rgb(23 23 28 / 0.16) transparent;
+    scrollbar-color: var(--scrollbar-thumb-color) transparent;
   }
 }
 

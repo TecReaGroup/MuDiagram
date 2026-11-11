@@ -21,7 +21,13 @@ const FONT_STACK = '"Geist", "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI"
 const FONT_STYLESHEET_URL =
   'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;600&display=swap';
 
-const BRAND_SOFT_HOVER = `color-mix(in srgb, ${DESIGN_TOKEN.brand} 14%, ${DESIGN_TOKEN.surface})`;
+const SHADOW_XS = '0 1px 2px rgb(23 23 28 / 0.05)';
+
+// Same SVG as draw.io's Editor.plusImage (Material "add"), so it matches the rest of its icon set.
+const PLUS_ICON_URL =
+  'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBkPSJNMTkgMTNoLTZ2NmgtMnYtNkg1di0yaDZWNWgydjZoNnYyeiIvPjwvc3ZnPg==';
+
+const BRAND_SOFT_HOVER =`color-mix(in srgb, ${DESIGN_TOKEN.brand} 14%, ${DESIGN_TOKEN.surface})`;
 
 // NOTE: draw.io toolbar icons are black SVG background images, so `color` cannot tint them.
 // These filter chains map any black pixel to the token colour exactly (solved offline with
@@ -88,6 +94,13 @@ const EDITOR_CSS = `
   display: none !important;
 }
 
+/* NOTE: The simple UI's "Pages" menu button has no class or id of its own and its title is
+   localized; it is always appended right after the zoom input. draw.io rewrites its inline
+   display on resize, hence !important. */
+.geSimple .geFooterToolbar > .geZoomInput + .geButton {
+  display: none !important;
+}
+
 /* draw.io dims enabled toolbar buttons to 0.65 and only shows them fully on hover, which reads
    as disabled. Its 0.3 for disabled ones fades the ~1px thin icons into hairlines that look like
    a lighter icon set, so disabled stays at 0.45 of the muted tint. */
@@ -108,6 +121,39 @@ const EDITOR_CSS = `
    on the line-strong token over the white toolbar. */
 .geSimple .geToolbarContainer .geButton.geZoomInput {
   border-color: rgb(0 0 0 / 0.3);
+}
+
+/* "More shapes" is a filled gePrimaryBtn by default; restyle it as the app's secondary button
+   (buttonClass('secondary', 'md') in src/shared/ui/control-class.ts). */
+html body.geEditor .geSidebarFooter .gePrimaryBtn {
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid ${DESIGN_TOKEN.line};
+  border-radius: 8px;
+  background-color: ${DESIGN_TOKEN.surface};
+  box-shadow: ${SHADOW_XS};
+  color: ${DESIGN_TOKEN.inkMuted};
+  font-size: 13px;
+  font-weight: 400;
+  transition: background-color 150ms, border-color 150ms, color 150ms;
+}
+html body.geEditor .geSidebarFooter .gePrimaryBtn:hover:not([disabled]) {
+  border: 1px solid ${DESIGN_TOKEN.lineStrong};
+  background-color: ${DESIGN_TOKEN.sunken};
+  box-shadow: ${SHADOW_XS};
+  color: ${DESIGN_TOKEN.ink};
+}
+/* The "+" is a text glyph in a span; swap it for draw.io's own Material plus icon, masked so it
+   takes the button's text colour like the sidebar title icons. */
+.geSidebarFooter .gePrimaryBtn span {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  font-size: 0;
+  background-color: currentColor;
+  -webkit-mask: url("${PLUS_ICON_URL}") center / contain no-repeat;
+  mask: url("${PLUS_ICON_URL}") center / contain no-repeat;
 }
 
 ::selection {

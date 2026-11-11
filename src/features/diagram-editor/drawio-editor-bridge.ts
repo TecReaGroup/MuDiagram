@@ -1,7 +1,11 @@
 // Direct access to the draw.io editor in our same-origin iframe. draw.io has no public JavaScript
 // API for embedders, so everything here relies on its internals (pinned in script/fetch-drawio.mjs).
 
+import { autoHideCanvasScrollbar } from './drawio-canvas-scrollbar';
 import { installHandTool, type HandToolTitles } from './drawio-hand-tool';
+
+const GENERAL_ENTRY_ID = 'general';
+const HIDDEN_GENERAL_PALETTE_IDS = ['misc', 'advanced'] as const;
 
 export type SelectedCell = { id: string; label: string };
 
@@ -23,8 +27,15 @@ type MxGraph = {
   addListener: (eventName: string, listener: () => void) => void;
 };
 type MxEventObjectConstructor = new (eventName: string) => object;
+// One More Shapes entry; `libs` are the palettes it shows or hides together.
+type SidebarEntryConfiguration = { id: string; prefix?: string | null; libs?: string[] };
+type DrawioSidebar = {
+  configuration: SidebarEntryConfiguration[];
+  showPalette: (paletteId: string, isVisible: boolean) => void;
+};
 export type DrawioEditorUi = {
   editor: { graph: MxGraph };
+  sidebar: DrawioSidebar;
   hoverIcons: { isResetEvent: (event: MouseEvent, allowShift?: boolean) => boolean };
   // The top-center toolbar of the "simple" UI; draw.io rebuilds its children on resize and reload.
   sketchPickerMenuElt: HTMLElement;
@@ -53,6 +64,17 @@ function keepPickerToolbarInSyncWithGraph(frameWindow: DrawioWindow, editorUi: D
   rebuildPickerToolbar();
 }
 
+/**
+ * NOTE: draw.io bundles the Misc and Advanced palettes into the single "General" More Shapes entry,
+ * so the dialog cannot toggle them apart and re-shows them on every apply. Dropping them from this
+ * sidebar's own copy of the entry keeps them hidden while "General" still works as usual.
+ */
+function hideMiscAndAdvancedPalettes(sidebar: DrawioSidebar) {
+  sidebar.configuration = sidebar.configuration.map(entry =>
+    entry.id === GENERAL_ENTRY_ID ? { ...entry, libs: [GENERAL_ENTRY_ID] } : entry);
+  for (const paletteId of HIDDEN_GENERAL_PALETTE_IDS) sidebar.showPalette(paletteId, false);
+}
+
 function readGraphModelXml(mxfileXml: string) {
   const graphModel = new DOMParser().parseFromString(mxfileXml, 'application/xml').querySelector('mxGraphModel');
   if (!graphModel) throw new Error('The diagram has no uncompressed <mxGraphModel>');
@@ -72,7 +94,9 @@ export function connectDrawioEditor(frameWindow: Window): DrawioEditorBridge | n
   if (!connectedEditorUi || typeof connectedEditorUi.replaceDiagramData !== 'function') return null;
 
   keepPickerToolbarInSyncWithGraph(frameWindow as DrawioWindow, connectedEditorUi);
+  hideMiscAndAdvancedPalettes(connectedEditorUi.sidebar);
   const { graph } = connectedEditorUi.editor;
+  autoHideCanvasScrollbar(graph.container);
   return {
     readSelection: () => graph.getSelectionCells().map(cell => ({
       id: String(cell.id),

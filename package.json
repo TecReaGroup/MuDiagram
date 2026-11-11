@@ -20,7 +20,7 @@
     "lucide-react": "^1.71.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-drawio": "^1.0.7",
+    "react-drawio": "1.0.7",
     "react-router-dom": "^7.18.5",
     "smol-toml": "^1.9.1",
     "zod": "^4.6.7"

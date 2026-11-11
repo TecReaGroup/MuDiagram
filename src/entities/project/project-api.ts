@@ -6,6 +6,8 @@ export type Project = {
   folderId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** Null until the editor first saves, so no SVG/PNG snapshot exists yet. */
+  diagramSavedAt: string | null;
   shareToken: string | null;
   trashedAt: string | null;
 };
@@ -63,7 +65,8 @@ export async function getDiagramXml(projectId: string): Promise<string> {
 export const saveDiagram = (projectId: string, snapshot: { xml: string; svg: string; png: string }) =>
   requestJson<Project>(`${PROJECT_API}/${projectId}/diagram`, { method: 'PUT', body: JSON.stringify(snapshot) });
 
-/** `updatedAt` doubles as a cache buster so a re-saved diagram shows its new preview. */
-export function projectPreviewUrl(project: Project): string {
-  return `${PROJECT_API}/${project.id}/diagram.svg?v=${encodeURIComponent(project.updatedAt)}`;
+/** Null while the diagram has no saved snapshot; `diagramSavedAt` doubles as the cache buster. */
+export function projectPreviewUrl(project: Project): string | null {
+  if (project.diagramSavedAt === null) return null;
+  return `${PROJECT_API}/${project.id}/diagram.svg?v=${encodeURIComponent(project.diagramSavedAt)}`;
 }
