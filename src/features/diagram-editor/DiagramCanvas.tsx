@@ -1,28 +1,14 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { DrawIoEmbed, type DrawIoEmbedRef, type EventAutoSave, type EventLoad } from 'react-drawio';
-import { getDiagramXml } from '../../entities/project/project-api';
+import { useQueryClient } from '@tanstack/react-query';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { diagramXmlQuery } from '../../entities/project/project-query';
 import { useI18n } from '../../shared/i18n/language-context';
 import { log, serializeError } from '../../shared/lib/logger';
-import { EDITOR_BASE_URL } from './drawio-editor-url';
-import { connectDrawioEditor, type DrawioEditorBridge, type SelectedCell } from './drawio-editor-bridge';
-import { DrawioLoadingFrame } from './DrawioLoadingFrame';
-import { DRAWIO_CONFIGURATION } from './drawio-theme';
+import type { SelectedCell } from './drawio-editor-bridge';
+import { openDrawioEditor, warmUpDrawioEditor, type DiagramSession } from './drawio-editor-frame';
+import { DrawioLoadingIndicator } from './DrawioLoadingFrame';
 import { useDiagramAutosave } from './use-diagram-autosave';
 
 const MODULE = 'DiagramEditor';
-
-// Saving is automatic, so draw.io's Save / Exit buttons and its "unsaved changes" status are hidden.
-// A project is a single-page diagram: `pages=0` hides the page menu while only one page exists.
-const EDITOR_URL_PARAMETERS = {
-  ui: 'simple',
-  pages: false,
-  spin: false,
-  libraries: true,
-  noSaveBtn: true,
-  saveAndExit: false,
-  noExitBtn: true,
-  modified: false,
-} as const;
 
 export type DiagramCanvasHandle = {
   /** The mxfile xml currently on the canvas, including edits not saved yet; empty until loaded. */
@@ -33,80 +19,66 @@ export type DiagramCanvasHandle = {
   readSelection: () => SelectedCell[];
 };
 
+/** The area the tab's shared draw.io editor is laid over while this project is open. */
 export const DiagramCanvas = forwardRef<DiagramCanvasHandle, { projectId: string }>(function DiagramCanvas({ projectId }, ref) {
-  const editorRef = useRef<DrawIoEmbedRef>(null);
-  const frameHostRef = useRef<HTMLDivElement>(null);
-  // undefined: not tried yet; null: draw.io internals missing, so edits fall back to a full load.
-  const editorBridgeRef = useRef<DrawioEditorBridge | null | undefined>(undefined);
-  // NOTE: Only the initially loaded xml is passed to the editor; react-drawio reloads the whole
-  // diagram whenever the `xml` prop changes, so saved xml is never fed back.
-  const [initialXml, setInitialXml] = useState<string | null>(null);
-  const [isEditorLoaded, setIsEditorLoaded] = useState(false);
+  const slotRef = useRef<HTMLDivElement>(null);
+  const sessionRef = useRef<DiagramSession | null>(null);
   const latestXmlRef = useRef('');
-  const { handleAutoSave, handleExport } = useDiagramAutosave(projectId, editorRef);
+  const [isDiagramLoaded, setIsDiagramLoaded] = useState(false);
+  const { handleAutoSave, handleExport } = useDiagramAutosave(projectId, sessionRef);
   const { t } = useI18n();
+  const queryClient = useQueryClient();
 
+  // fetchQuery, not useQuery: the editor takes the xml once, and a background refetch must not reload it.
   useEffect(() => {
+    // Opening a project directly skips the library's idle warm-up; draw.io then starts alongside the fetch.
+    warmUpDrawioEditor();
     let isCurrent = true;
-    getDiagramXml(projectId).then(
+    queryClient.fetchQuery(diagramXmlQuery(projectId)).then(
       xml => {
         if (!isCurrent) return;
         latestXmlRef.current = xml;
-        setInitialXml(xml);
+        sessionRef.current = openDrawioEditor({
+          slot: slotRef.current!,
+          xml,
+          handToolTitles: { select: t('editor.selectTool'), hand: t('editor.handTool') },
+          listener: {
+            onLoad: loadedXml => {
+              latestXmlRef.current = loadedXml;
+              setIsDiagramLoaded(true);
+            },
+            onChange: changedXml => {
+              latestXmlRef.current = changedXml;
+              handleAutoSave();
+            },
+            onExport: handleExport,
+          },
+        });
       },
       error => log('error', MODULE, 'Failed to load diagram', { projectId, ...serializeError(error) }),
     );
-    return () => { isCurrent = false; };
-  }, [projectId]);
+    return () => {
+      isCurrent = false;
+      sessionRef.current?.close();
+      sessionRef.current = null;
+    };
+  }, [projectId, queryClient, t, handleAutoSave, handleExport]);
 
   useImperativeHandle(ref, () => ({
     readXml: () => latestXmlRef.current,
     loadXml: xml => {
       latestXmlRef.current = xml;
-      // A full `load` would also wipe draw.io's undo history.
-      if (editorBridgeRef.current) editorBridgeRef.current.replaceDiagram(xml);
-      else editorRef.current?.load({ xml, autosave: true });
+      sessionRef.current?.replaceDiagram(xml);
       handleAutoSave();
     },
-    readSelection: () => editorBridgeRef.current?.readSelection() ?? [],
+    readSelection: () => sessionRef.current?.readSelection() ?? [],
   }), [handleAutoSave]);
 
-  // Both callbacks must stay stable: react-drawio subscribes to iframe messages only once.
-  // draw.io reports `load` after every loadXml too, but the iframe and its editor stay the same.
-  const handleEditorLoad = useCallback((event: EventLoad) => {
-    latestXmlRef.current = event.xml;
-    setIsEditorLoaded(true);
-    const frameWindow = frameHostRef.current?.querySelector('iframe')?.contentWindow;
-    if (editorBridgeRef.current !== undefined || !frameWindow) return;
-    editorBridgeRef.current = connectDrawioEditor(frameWindow);
-    if (!editorBridgeRef.current) {
-      log('warn', MODULE, 'draw.io internals not found; AI edits cannot be undone and the selection is not shared');
-      return;
-    }
-    editorBridgeRef.current.installHandTool({ select: t('editor.selectTool'), hand: t('editor.handTool') });
-  }, [t]);
-  const handleCanvasChange = useCallback((event: EventAutoSave) => {
-    latestXmlRef.current = event.xml;
-    handleAutoSave();
-  }, [handleAutoSave]);
-
+  // The slot is positioned and comes after the fixed editor iframe in the DOM, so it paints above it;
+  // without pointer-events-none it would swallow every click meant for the canvas.
   return (
-    <DrawioLoadingFrame isLoaded={isEditorLoaded}>
-      {initialXml !== null && (
-        <div ref={frameHostRef} className="size-full">
-          <DrawIoEmbed
-            ref={editorRef}
-            xml={initialXml}
-            autosave
-            baseUrl={EDITOR_BASE_URL}
-            urlParameters={EDITOR_URL_PARAMETERS}
-            configuration={DRAWIO_CONFIGURATION}
-            onLoad={handleEditorLoad}
-            onAutoSave={handleCanvasChange}
-            onExport={handleExport}
-          />
-        </div>
-      )}
-    </DrawioLoadingFrame>
+    <div ref={slotRef} className="pointer-events-none relative size-full rounded-[inherit]">
+      {!isDiagramLoaded && <DrawioLoadingIndicator />}
+    </div>
   );
 });

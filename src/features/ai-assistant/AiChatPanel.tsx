@@ -1,5 +1,6 @@
 import { ArrowUp, Check, CircleExclamationPoint, LoaderCircle, Square, SquarePen, X } from 'lucide-react';
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
+import type { FileUIPart } from 'ai';
+import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
 import { BrandMark } from '../../shared/ui/BrandMark';
 import { FIELD_FOCUS_CLASS, FOCUS_RING, iconButtonClass, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
@@ -7,6 +8,7 @@ import type { DiagramCanvasHandle } from '../diagram-editor/DiagramCanvas';
 import type { DiagramCheckpoints } from './chat-history-api';
 import { ChatHistoryMenu } from './ChatHistoryMenu';
 import { CheckpointPreviewModal } from './CheckpointPreviewModal';
+import { MAX_IMAGES_PER_MESSAGE, readPastedImages } from './pasted-image';
 import { useDiagramChat, type DiagramChatMessage } from './use-diagram-chat';
 
 type ToolStatus = 'done' | 'failed' | 'running';
@@ -82,9 +84,21 @@ type ChatMessageProps = Omit<AssistantPartProps, 'part'> & { message: DiagramCha
 function ChatMessage({ message, ...checkpointProps }: ChatMessageProps) {
   if (message.role === 'user') {
     const text = message.parts.map(part => part.type === 'text' ? part.text : '').join('');
+    const images = message.parts.filter(part => part.type === 'file');
     return (
-      <div className="ml-auto w-fit max-w-[85%] animate-fade-in rounded-2xl rounded-tr-md bg-sunken px-3.5 py-2">
-        <p className="whitespace-pre-wrap wrap-break-word">{text}</p>
+      <div className="ml-auto flex w-fit max-w-[85%] animate-fade-in flex-col items-end gap-1.5">
+        {images.length > 0 && (
+          <div className="flex flex-wrap justify-end gap-1.5">
+            {images.map((image, index) => (
+              <img key={index} src={image.url} alt={image.filename ?? ''} className="max-h-40 max-w-full rounded-xl border border-line object-contain" />
+            ))}
+          </div>
+        )}
+        {text && (
+          <div className="rounded-2xl rounded-tr-md bg-sunken px-3.5 py-2">
+            <p className="whitespace-pre-wrap wrap-break-word">{text}</p>
+          </div>
+        )}
       </div>
     );
   }
@@ -107,8 +121,9 @@ type AiChatPanelProps = {
 export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps) {
   const { t } = useI18n();
   const [draft, setDraft] = useState('');
+  const [draftImages, setDraftImages] = useState<FileUIPart[]>([]);
   const [previewedCheckpointXml, setPreviewedCheckpointXml] = useState<string | null>(null);
-  const { chatId, messages, checkpoints, error, isBusy, sendText, stop, startNewChat, openChat, deleteChat } = useDiagramChat(canvasRef, projectId);
+  const { chatId, messages, checkpoints, error, isBusy, sendMessage, stop, startNewChat, openChat, deleteChat } = useDiagramChat(canvasRef, projectId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const isWaitingForReply = isBusy && messages[messages.length - 1]?.role === 'user';
 
@@ -119,9 +134,22 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
   const submitDraft = (event: FormEvent) => {
     event.preventDefault();
     const text = draft.trim();
-    if (!text || isBusy) return;
-    void sendText(text);
+    if ((!text && draftImages.length === 0) || isBusy) return;
+    void sendMessage(text, draftImages);
     setDraft('');
+    setDraftImages([]);
+  };
+
+  // Plain-text pastes fall through to the textarea; only image pastes are taken over.
+  const attachPastedImages = async (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!Array.from(event.clipboardData.files).some(file => file.type.startsWith('image/'))) return;
+    event.preventDefault();
+    const pastedImages = await readPastedImages(event.clipboardData);
+    setDraftImages(current => [...current, ...pastedImages].slice(0, MAX_IMAGES_PER_MESSAGE));
+  };
+
+  const removeDraftImage = (removedIndex: number) => {
+    setDraftImages(current => current.filter((_, index) => index !== removedIndex));
   };
 
   const submitOnEnter = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -169,10 +197,29 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
       </div>
 
       <form onSubmit={submitDraft} className={`${SURFACE_CARD_CLASS} ${FIELD_FOCUS_CLASS} m-2.5 mt-0`}>
+        {draftImages.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-3 pt-2.5">
+            {draftImages.map((image, index) => (
+              <div key={index} className="group relative">
+                <img src={image.url} alt={image.filename ?? ''} className="size-14 rounded-lg border border-line object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeDraftImage(index)}
+                  aria-label={t('ai.removeImage')}
+                  title={t('ai.removeImage')}
+                  className={`absolute -top-1.5 -right-1.5 inline-flex size-5 items-center justify-center rounded-full bg-ink text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 ${FOCUS_RING}`}
+                >
+                  <X className="size-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <textarea
           value={draft}
           onChange={event => setDraft(event.target.value)}
           onKeyDown={submitOnEnter}
+          onPaste={event => void attachPastedImages(event)}
           rows={2}
           placeholder={t('ai.inputPlaceholder')}
           className="scrollbar-subtle block max-h-40 min-h-14 w-full resize-none bg-transparent px-3 pt-2.5 text-chat text-ink outline-none [field-sizing:content] placeholder:text-ink-faint"
@@ -184,7 +231,7 @@ export function AiChatPanel({ projectId, canvasRef, onClose }: AiChatPanelProps)
               <Square className="size-3 fill-current" />
             </button>
           ) : (
-            <button type="submit" disabled={!draft.trim()} aria-label={t('ai.send')} className={SEND_BUTTON_CLASS}>
+            <button type="submit" disabled={!draft.trim() && draftImages.length === 0} aria-label={t('ai.send')} className={SEND_BUTTON_CLASS}>
               <ArrowUp className="size-4" />
             </button>
           )}

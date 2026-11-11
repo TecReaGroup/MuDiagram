@@ -103,8 +103,11 @@ const EDITOR_CSS = `
 
 /* draw.io dims enabled toolbar buttons to 0.65 and only shows them fully on hover, which reads
    as disabled. Its 0.3 for disabled ones fades the ~1px thin icons into hairlines that look like
-   a lighter icon set, so disabled stays at 0.45 of the muted tint. */
-.geSimple .geToolbarContainer .geButton {
+   a lighter icon set, so disabled stays at 0.45 of the muted tint.
+   NOTE: The filter also repaints the button's own background, which would turn the grey
+   highlight of a toggled-on button (.geActiveItem, e.g. Format while its panel is open) black.
+   Active buttons keep draw.io's untinted black icon, which reads as ink on that highlight. */
+.geSimple .geToolbarContainer .geButton:not(.geActiveItem) {
   filter: ${ICON_FILTER.inkMuted};
 }
 .geSimple .geToolbarContainer .geButton:is(.mxDisabled, .mxDisabled *, [disabled]) {
@@ -113,7 +116,7 @@ const EDITOR_CSS = `
 .geSimple .geToolbarContainer .geButton:not(.mxDisabled, .mxDisabled *, [disabled]) {
   opacity: 1;
 }
-.geSimple .geToolbarContainer .geButton:hover:not(.mxDisabled, .mxDisabled *, [disabled]) {
+.geSimple .geToolbarContainer .geButton:hover:not(.geActiveItem, .mxDisabled, .mxDisabled *, [disabled]) {
   filter: ${ICON_FILTER.ink};
 }
 

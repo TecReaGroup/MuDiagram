@@ -1,8 +1,9 @@
 import { ChevronRight, CloudCheck, Share2, Sparkle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { listFolders, type Folder } from '../../entities/folder/folder-api';
-import { getProject, type Project } from '../../entities/project/project-api';
+import { folderListQuery } from '../../entities/folder/folder-query';
+import { storeProject, useProject } from '../../entities/project/project-query';
 import { AiChatPanel } from '../../features/ai-assistant/AiChatPanel';
 import { DiagramCanvas, type DiagramCanvasHandle } from '../../features/diagram-editor/DiagramCanvas';
 import { SharePanel } from '../../features/project-share/SharePanel';
@@ -14,28 +15,13 @@ import { usePopover } from '../../shared/ui/use-popover';
 export function EditorPage() {
   const { t } = useI18n();
   const { projectId = '' } = useParams();
-  const [project, setProject] = useState<Project | null>(null);
-  const [folder, setFolder] = useState<Folder | null>(null);
+  const queryClient = useQueryClient();
+  const { data: project } = useProject(projectId);
+  const { data: folders } = useQuery(folderListQuery);
+  const folder = folders?.find(candidate => candidate.id === project?.folderId);
   const canvasRef = useRef<DiagramCanvasHandle>(null);
   const sharePopover = usePopover<HTMLDivElement>();
   const isShared = project?.shareToken != null;
-
-  useEffect(() => {
-    let isCurrent = true;
-    Promise.all([getProject(projectId), listFolders()]).then(
-      ([loadedProject, folders]) => {
-        if (!isCurrent) return;
-        setProject(loadedProject);
-        setFolder(folders.find(candidate => candidate.id === loadedProject.folderId) ?? null);
-      },
-      () => {
-        if (!isCurrent) return;
-        setProject(null);
-        setFolder(null);
-      },
-    );
-    return () => { isCurrent = false; };
-  }, [projectId]);
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
 
   return (
@@ -73,7 +59,7 @@ export function EditorPage() {
             </button>
             {sharePopover.isOpen && project && (
               <div className="absolute top-10 right-0 z-30 origin-top-right animate-pop-in">
-                <SharePanel project={project} onProjectChange={setProject} />
+                <SharePanel project={project} onProjectChange={changed => storeProject(queryClient, changed)} />
               </div>
             )}
           </div>

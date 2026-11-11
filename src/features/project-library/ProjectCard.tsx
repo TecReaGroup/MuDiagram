@@ -1,7 +1,9 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { Globe, Lock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Folder } from '../../entities/folder/folder-api';
 import type { Project } from '../../entities/project/project-api';
+import { diagramXmlQuery } from '../../entities/project/project-query';
 import { useI18n } from '../../shared/i18n/language-context';
 import { formatRelativeTime } from '../../shared/lib/relative-time';
 import { HOVER_REVEAL_CLASS, SURFACE_CARD_CLASS } from '../../shared/ui/control-class';
@@ -21,9 +23,16 @@ export function ProjectCard({ project, folders, onEdit, onMoveToTrash }: Project
   const { t } = i18n;
   const isShared = project.shareToken !== null;
   const VisibilityIcon = isShared ? Globe : Lock;
+  const queryClient = useQueryClient();
+  // Hover/focus usually precedes a click by a few hundred ms: enough to have the diagram ready.
+  const prefetchDiagram = () => void queryClient.prefetchQuery(diagramXmlQuery(project.id));
 
   return (
-    <article className={`${SURFACE_CARD_CLASS} group relative animate-fade-in p-1.5 transition-[box-shadow,border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card`}>
+    <article
+      onPointerEnter={prefetchDiagram}
+      onFocus={prefetchDiagram}
+      className={`${SURFACE_CARD_CLASS} group relative animate-fade-in p-1.5 transition-[box-shadow,border-color,translate] duration-200 hover:-translate-y-0.5 hover:border-line-strong hover:shadow-card`}
+    >
       <Link to={`/project/${project.id}`} className="dot-grid flex aspect-[27/14] items-center justify-center overflow-hidden rounded-lg">
         <ProjectPreview project={project} />
       </Link>

@@ -19,6 +19,9 @@ export const DIAGRAM_RENDITIONS = {
 const projectRoot = appConfig.storage.projectRoot;
 const trashRetentionMs = appConfig.trash.retentionDays * DAY_MS;
 const projectLocks = new Map();
+// project.json is written only by this process, so a parsed copy stays valid until the next write.
+// Listing the library used to re-read and re-parse every project.json on each request.
+const projectMetaCache = new Map();
 
 export function projectDirectory(projectId) {
   return join(projectRoot, projectId);
@@ -60,6 +63,8 @@ async function normalizeProjectMeta(project) {
 }
 
 async function readProjectMeta(projectId) {
+  const cached = projectMetaCache.get(projectId);
+  if (cached) return cached;
   let project;
   try {
     project = JSON.parse(await readFile(join(projectDirectory(projectId), PROJECT_META_FILE), 'utf8'));
@@ -67,11 +72,15 @@ async function readProjectMeta(projectId) {
     if (error?.code === 'ENOENT') throw new HttpError(404, 'Project not found');
     throw error;
   }
-  return normalizeProjectMeta(project);
+  const normalized = await normalizeProjectMeta(project);
+  // Reads take no lock: a write that finished while this read was in flight is newer, so it wins.
+  if (!projectMetaCache.has(projectId)) projectMetaCache.set(projectId, normalized);
+  return projectMetaCache.get(projectId);
 }
 
 async function writeProjectMeta(project) {
   await writeFileAtomically(join(projectDirectory(project.id), PROJECT_META_FILE), JSON.stringify(project, null, 2));
+  projectMetaCache.set(project.id, project);
 }
 
 async function updateProjectMeta(projectId, applyChange) {
@@ -163,6 +172,7 @@ export function deleteProjectPermanently(projectId) {
   return withProjectLock(projectId, async () => {
     if (!isTrashed(await readProjectMeta(projectId))) throw new HttpError(409, 'Move the project to the trash first');
     await rm(projectDirectory(projectId), { recursive: true, force: true });
+    projectMetaCache.delete(projectId);
   });
 }
 

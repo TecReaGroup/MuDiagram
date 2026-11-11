@@ -1,3 +1,4 @@
+import { CACHE_CONTROL } from '../../config/constants.mjs';
 import { log } from '../../infrastructure/logger.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
 import { readJsonBody, sendFile, sendJson } from '../../shared/http.mjs';
@@ -115,7 +116,9 @@ export const projectRoutes = [
     path: new RegExp(`^${PROJECT_PATH}/diagram\\.(?<extension>drawio|svg|png)$`),
     handle: async (request, response, { projectId, extension }) => {
       const { contentType, content } = await readDiagramRendition(projectId, extension);
-      sendFile(response, contentType, content);
+      // Library previews put `diagramSavedAt` in `?v=`, so a versioned URL always names the same bytes.
+      const isVersioned = new URL(request.url, 'http://localhost').searchParams.has('v');
+      sendFile(response, contentType, content, isVersioned ? { 'Cache-Control': CACHE_CONTROL.privateImmutable } : {});
     },
   },
   {

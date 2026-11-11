@@ -1,3 +1,4 @@
+import { CACHE_CONTROL } from '../config/constants.mjs';
 import { HttpError } from './http-error.mjs';
 
 // Bodies carry the diagram XML plus base64 SVG/PNG snapshots of it.
@@ -8,7 +9,7 @@ const STORED_FILE_POLICY = "default-src 'none'; img-src data: https:; style-src 
 export function sendJson(response, status, value, headers = {}) {
   response.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
+    'Cache-Control': CACHE_CONTROL.none,
     'Referrer-Policy': 'no-referrer',
     'X-Content-Type-Options': 'nosniff',
     ...headers,
@@ -17,7 +18,7 @@ export function sendJson(response, status, value, headers = {}) {
 }
 
 export function sendNoContent(response) {
-  response.writeHead(204, { 'Cache-Control': 'no-store' });
+  response.writeHead(204, { 'Cache-Control': CACHE_CONTROL.none });
   response.end();
 }
 
@@ -25,7 +26,7 @@ export function sendFile(response, contentType, content, headers = {}) {
   response.writeHead(200, {
     'Content-Type': contentType,
     'Content-Length': content.length,
-    'Cache-Control': 'no-cache',
+    'Cache-Control': CACHE_CONTROL.revalidate,
     'Content-Security-Policy': STORED_FILE_POLICY,
     'X-Content-Type-Options': 'nosniff',
     ...headers,

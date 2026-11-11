@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 import * as folderApi from '../../entities/folder/folder-api';
 import type { Folder } from '../../entities/folder/folder-api';
+import { folderListQuery } from '../../entities/folder/folder-query';
 import * as projectApi from '../../entities/project/project-api';
 import type { Project, TrashedProject } from '../../entities/project/project-api';
+import { forgetProject, projectListQuery, storeProject, trashedProjectListQuery } from '../../entities/project/project-query';
 import { log, serializeError } from '../../shared/lib/logger';
 
 const MODULE = 'ProjectLibrary';
@@ -21,37 +24,46 @@ function withoutId<T extends { id: string }>(items: T[], id: string): T[] {
   return items.filter(item => item.id !== id);
 }
 
-/** Library state (projects, trash, folders) plus every operation that changes it. */
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * Library state (projects, trash, folders) plus every operation that changes it.
+ *
+ * The lists live in the shared query cache, so leaving the library and coming back renders at once;
+ * operations write the server's answer into that cache instead of refetching.
+ */
 export function useProjectLibrary() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [trashedProjects, setTrashedProjects] = useState<TrashedProject[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([]);
-  const [failure, setFailure] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [projectsQuery, trashedProjectsQuery, foldersQuery] = useQueries({
+    queries: [projectListQuery, trashedProjectListQuery, folderListQuery],
+  });
+  const [actionFailure, setActionFailure] = useState<string | null>(null);
+  const loadError = projectsQuery.error ?? trashedProjectsQuery.error ?? foldersQuery.error;
+  const failure = actionFailure ?? (loadError ? errorMessage(loadError) : null);
+  const isLoading = projectsQuery.isPending || trashedProjectsQuery.isPending || foldersQuery.isPending;
+  const projects = projectsQuery.data ?? [];
+  const trashedProjects = trashedProjectsQuery.data ?? [];
+  const folders = foldersQuery.data ?? [];
+
+  const setProjects = (change: (current: Project[]) => Project[]) =>
+    queryClient.setQueryData(projectListQuery.queryKey, current => change(current ?? []));
+  const setTrashedProjects = (change: (current: TrashedProject[]) => TrashedProject[]) =>
+    queryClient.setQueryData(trashedProjectListQuery.queryKey, current => change(current ?? []));
+  const setFolders = (change: (current: Folder[]) => Folder[]) =>
+    queryClient.setQueryData(folderListQuery.queryKey, current => change(current ?? []));
 
   const runReporting = useCallback(async <T,>(action: string, operation: () => Promise<T>): Promise<T | undefined> => {
-    setFailure(null);
+    setActionFailure(null);
     try {
       return await operation();
     } catch (error) {
       log('error', MODULE, `${action} failed`, serializeError(error));
-      setFailure(error instanceof Error ? error.message : String(error));
+      setActionFailure(errorMessage(error));
       return undefined;
     }
   }, []);
-
-  useEffect(() => {
-    void runReporting('Load library', async () => {
-      const [loadedProjects, loadedTrash, loadedFolders] = await Promise.all([
-        projectApi.listProjects(),
-        projectApi.listTrashedProjects(),
-        folderApi.listFolders(),
-      ]);
-      setProjects(loadedProjects);
-      setTrashedProjects(loadedTrash);
-      setFolders(loadedFolders);
-    }).finally(() => setIsLoading(false));
-  }, [runReporting]);
 
   // Creation takes only name and folder; sharing is a separate request on the new project.
   const createProject = (settings: ProjectSettings) => runReporting('Create project', async () => {
@@ -59,6 +71,7 @@ export function useProjectLibrary() {
     if (settings.isShared) project = await projectApi.shareProject(project.id);
     log('info', MODULE, 'Project created', { projectId: project.id });
     setProjects(current => [project, ...current]);
+    storeProject(queryClient, project);
     return project;
   });
 
@@ -71,7 +84,7 @@ export function useProjectLibrary() {
       edited = await (settings.isShared ? projectApi.shareProject : projectApi.unshareProject)(project.id);
     }
     log('info', MODULE, 'Project edited', { projectId: project.id });
-    setProjects(current => replaceById(current, edited));
+    storeProject(queryClient, edited);
   });
 
   const moveProjectToTrash = (project: Project) => runReporting('Move project to trash', async () => {
@@ -86,12 +99,14 @@ export function useProjectLibrary() {
     log('info', MODULE, 'Project restored', { projectId: project.id });
     setTrashedProjects(current => withoutId(current, project.id));
     setProjects(current => [restored, ...current]);
+    storeProject(queryClient, restored);
   });
 
   const deleteProjectPermanently = (project: TrashedProject) => runReporting('Delete project permanently', async () => {
     await projectApi.deleteProjectPermanently(project.id);
     log('info', MODULE, 'Project deleted permanently', { projectId: project.id });
     setTrashedProjects(current => withoutId(current, project.id));
+    forgetProject(queryClient, project.id);
   });
 
   const createFolder = (name: string) => runReporting('Create folder', async () => {

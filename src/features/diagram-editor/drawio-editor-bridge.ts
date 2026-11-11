@@ -42,6 +42,8 @@ export type DrawioEditorUi = {
   // Executes draw.io's undoable ReplaceDiagram change on the current page.
   replaceDiagramData: (graphModelXml: string) => void;
   fireEvent: (event: object) => void;
+  toggleShapesPanel: (isVisible: boolean) => void;
+  toggleFormatPanel: (isVisible: boolean) => void;
 };
 type DrawioWindow = Window & {
   Draw?: { loadPlugin?: (plugin: (editorUi: DrawioEditorUi) => void) => void };
@@ -75,6 +77,19 @@ function hideMiscAndAdvancedPalettes(sidebar: DrawioSidebar) {
   for (const paletteId of HIDDEN_GENERAL_PALETTE_IDS) sidebar.showPalette(paletteId, false);
 }
 
+/**
+ * NOTE: The simple UI opens the Shapes and Format panels when its window starts at least 864 / 1024px
+ * wide, and reopens them whenever the window grows back across those widths. Embedded, that "window"
+ * is our canvas slot, whose width shifts with our own layout (AI panel, project switches), so the
+ * panels kept popping open. Pinning `lastWindowWidth` to null disables the crossing check in
+ * `windowResized`; the panels now change only when the user toggles them.
+ */
+function hideSidePanels(editorUi: DrawioEditorUi) {
+  Object.defineProperty(editorUi, 'lastWindowWidth', { get: () => null, set: () => {} });
+  editorUi.toggleShapesPanel(false);
+  editorUi.toggleFormatPanel(false);
+}
+
 function readGraphModelXml(mxfileXml: string) {
   const graphModel = new DOMParser().parseFromString(mxfileXml, 'application/xml').querySelector('mxGraphModel');
   if (!graphModel) throw new Error('The diagram has no uncompressed <mxGraphModel>');
@@ -95,6 +110,7 @@ export function connectDrawioEditor(frameWindow: Window): DrawioEditorBridge | n
 
   keepPickerToolbarInSyncWithGraph(frameWindow as DrawioWindow, connectedEditorUi);
   hideMiscAndAdvancedPalettes(connectedEditorUi.sidebar);
+  hideSidePanels(connectedEditorUi);
   const { graph } = connectedEditorUi.editor;
   autoHideCanvasScrollbar(graph.container);
   return {

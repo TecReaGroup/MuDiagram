@@ -1,5 +1,5 @@
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport, isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type UIDataTypes, type UIMessage } from 'ai';
+import { DefaultChatTransport, isToolUIPart, lastAssistantMessageIsCompleteWithToolCalls, type FileUIPart, type UIDataTypes, type UIMessage } from 'ai';
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { fetchOrThrowApiError } from '../../shared/api/request-json';
 import { log, serializeError } from '../../shared/lib/logger';
@@ -165,9 +165,11 @@ export function useDiagramChat(canvasRef: RefObject<DiagramCanvasHandle | null>,
     log('info', MODULE, 'Chat deleted', { chatId: savedChatId });
   };
 
-  const sendText = (text: string) => {
+  const sendMessage = (text: string, images: FileUIPart[]) => {
     hasChosenChatRef.current = true;
-    return chat.sendMessage({ text, metadata: { selectedCells: canvasRef.current?.readSelection() ?? [] } });
+    const metadata = { selectedCells: canvasRef.current?.readSelection() ?? [] };
+    // An image-only message must not carry an empty text part.
+    return chat.sendMessage(text ? { text, files: images, metadata } : { files: images, metadata });
   };
 
   return {
@@ -176,7 +178,7 @@ export function useDiagramChat(canvasRef: RefObject<DiagramCanvasHandle | null>,
     checkpoints,
     error: chat.error,
     isBusy,
-    sendText,
+    sendMessage,
     stop: chat.stop,
     startNewChat,
     openChat,
