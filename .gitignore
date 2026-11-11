@@ -46,5 +46,5 @@ temp/*
 /backend/data/setting/*
 !backend/data/setting/.gitkeep
 
-# Server-specific compose (holds the tunnel token); copy from compose.yaml.example
+# Server-specific compose (holds the tunnel token); copy from compose.example.yaml
 compose.yaml
