@@ -1,4 +1,4 @@
-import { ArrowUp, Check, CircleExclamationPoint, LoaderCircle, Square, SquarePen, X } from 'lucide-react';
+import { ArrowUp, Check, CircleExclamationPoint, Globe, LoaderCircle, Square, SquarePen, X } from 'lucide-react';
 import type { FileUIPart } from 'ai';
 import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent, type RefObject } from 'react';
 import { useI18n } from '../../shared/i18n/language-context';
@@ -19,6 +19,13 @@ const TOOL_STATUS_STYLES = {
   failed: { labelKey: 'ai.toolFailed', Icon: CircleExclamationPoint, className: 'bg-danger-soft text-danger' },
   running: { labelKey: 'ai.toolRunning', Icon: LoaderCircle, className: 'bg-sunken text-ink-muted [&_svg]:animate-spin' },
 } as const;
+
+// OpenAI search citations such as "\uE200cite\uE202turn0view0\uE201" can leak into the text instead of
+// becoming annotations; `$` also drops a marker still open mid-stream.
+const LEAKED_CITATION_PATTERN = /\uE200[^\uE201]*(?:\uE201|$)/g;
+
+// Parts the panel draws; the rest (reasoning, step boundaries) must not split a run of searches.
+const VISIBLE_PART_TYPES = new Set<MessagePart['type']>(['text', 'tool-display_diagram', 'tool-edit_diagram', 'tool-web_search']);
 
 const SEND_BUTTON_CLASS = 'inline-flex size-7 items-center justify-center rounded-lg bg-ink text-white transition-[background-color,opacity] hover:bg-ink/85 disabled:bg-hover disabled:text-ink-faint';
 
@@ -51,6 +58,45 @@ function CheckpointChip({ onPreview }: { onPreview: () => void }) {
         {t('ai.previewCheckpoint')}
       </span>
     </button>
+  );
+}
+
+type WebSearchPart = Extract<MessagePart, { type: 'tool-web_search' }>;
+
+function isWebSearchPart(part: MessagePart | undefined): part is WebSearchPart {
+  return part?.type === 'tool-web_search';
+}
+
+/** The searches in a row starting at `start`. */
+function readWebSearchRun(parts: MessagePart[], start: number) {
+  const searches: WebSearchPart[] = [];
+  for (const part of parts.slice(start)) {
+    if (!isWebSearchPart(part)) break;
+    searches.push(part);
+  }
+  return searches;
+}
+
+/** Drops leaked citation markers, then the parts that would draw nothing. */
+function readVisibleParts(parts: MessagePart[]) {
+  return parts
+    .filter(part => VISIBLE_PART_TYPES.has(part.type))
+    .map(part => part.type === 'text' ? { ...part, text: part.text.replace(LEAKED_CITATION_PATTERN, '') } : part)
+    .filter(part => part.type !== 'text' || part.text.trim() !== '');
+}
+
+/** One chip for a run of searches; it shows failure only when every search failed. */
+function WebSearchChip({ searches }: { searches: WebSearchPart[] }) {
+  const { t } = useI18n();
+  const failedSearches = searches.filter(search => search.state === 'output-error');
+  if (failedSearches.length === searches.length) return <ToolStatusChip status="failed" detail={failedSearches[0].errorText} />;
+  const isRunning = searches.some(search => search.state === 'input-streaming' || search.state === 'input-available');
+  const Icon = isRunning ? LoaderCircle : Globe;
+  return (
+    <span className={`inline-flex h-6 w-fit items-center gap-1 rounded-md bg-sunken px-2 text-xs font-medium text-ink-muted ${isRunning ? '[&_svg]:animate-spin' : ''}`}>
+      <Icon className="size-3.5 shrink-0" />
+      {t(isRunning ? 'ai.webSearchRunning' : 'ai.webSearchDone')}
+    </span>
   );
 }
 
@@ -102,11 +148,16 @@ function ChatMessage({ message, ...checkpointProps }: ChatMessageProps) {
       </div>
     );
   }
+  const visibleParts = readVisibleParts(message.parts);
   return (
     <div className="flex animate-fade-in gap-2.5">
       <BrandMark className="mt-0.5 size-5" />
       <div className="flex min-w-0 flex-col gap-2">
-        {message.parts.map((part, index) => <AssistantPart key={index} part={part} {...checkpointProps} />)}
+        {visibleParts.map((part, index) => {
+          if (!isWebSearchPart(part)) return <AssistantPart key={index} part={part} {...checkpointProps} />;
+          if (isWebSearchPart(visibleParts[index - 1])) return null;
+          return <WebSearchChip key={index} searches={readWebSearchRun(visibleParts, index)} />;
+        })}
       </div>
     </div>
   );

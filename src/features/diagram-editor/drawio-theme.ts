@@ -170,4 +170,7 @@ export const DRAWIO_CONFIGURATION = {
   css: EDITOR_CSS,
   defaultGridColor: DESIGN_TOKEN.line,
   defaultPageBackgroundColor: DESIGN_TOKEN.surface,
+  // NOTE: Once set, draw.io ignores each diagram's saved `fold` flag on load, so every project opens
+  // with Collapse/Expand off; a toggle in Diagram settings lasts only until the project is reopened.
+  defaultFoldingEnabled: false,
 };

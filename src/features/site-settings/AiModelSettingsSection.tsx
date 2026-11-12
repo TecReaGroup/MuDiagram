@@ -5,6 +5,7 @@ import { useI18n } from '../../shared/i18n/language-context';
 import { log, serializeError } from '../../shared/lib/logger';
 import { FIELD_INPUT_CLASS as BASE_FIELD_INPUT_CLASS, buttonClass } from '../../shared/ui/control-class';
 import { FormField } from '../../shared/ui/FormField';
+import { Switch } from '../../shared/ui/Switch';
 
 const MODULE = 'AiModelSetting';
 const SETTING_API = '/api/setting';
@@ -14,7 +15,7 @@ const API_KEY_PLACEHOLDER = 'sk-...';
 
 const FIELD_INPUT_CLASS = `${BASE_FIELD_INPUT_CLASS} font-mono`;
 
-type AiModelSetting = { model: string; baseUrl: string; apiKey: string };
+type AiModelSetting = { model: string; baseUrl: string; apiKey: string; nativeWebSearch: boolean };
 
 type ModelTestStatus =
   | { kind: 'idle' }
@@ -45,14 +46,22 @@ export function AiModelSettingsSection() {
     setTestStatus({ kind: 'idle' });
   };
 
-  const saveAiSetting = () => {
-    if (JSON.stringify(form) === JSON.stringify(savedSetting)) return;
-    requestJson<{ ai: AiModelSetting }>(SETTING_API, { method: 'PATCH', body: JSON.stringify({ ai: form }) })
+  const saveAiSetting = (setting: AiModelSetting) => {
+    if (JSON.stringify(setting) === JSON.stringify(savedSetting)) return;
+    requestJson<{ ai: AiModelSetting }>(SETTING_API, { method: 'PATCH', body: JSON.stringify({ ai: setting }) })
       .then(({ ai }) => {
         setSavedSetting(ai);
         log('info', MODULE, 'AI model setting saved', { model: ai.model });
       })
       .catch(error => log('error', MODULE, 'Save AI model setting failed', serializeError(error)));
+  };
+
+  // A switch has no blur, so it saves on every toggle.
+  const toggleNativeWebSearch = (nativeWebSearch: boolean) => {
+    const nextForm = { ...form, nativeWebSearch };
+    setForm(nextForm);
+    setTestStatus({ kind: 'idle' });
+    saveAiSetting(nextForm);
   };
 
   const testModel = () => {
@@ -65,7 +74,7 @@ export function AiModelSettingsSection() {
       });
   };
 
-  const fieldProps = { onChange: updateField, onBlur: saveAiSetting, className: FIELD_INPUT_CLASS };
+  const fieldProps = { onChange: updateField, onBlur: () => saveAiSetting(form), className: FIELD_INPUT_CLASS };
 
   return (
     <div className="space-y-5">
@@ -79,6 +88,10 @@ export function AiModelSettingsSection() {
         <input name="apiKey" autoComplete="off" spellCheck={false} value={form.apiKey} placeholder={API_KEY_PLACEHOLDER} {...fieldProps} />
       </FormField>
       <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1 text-ui font-medium text-ink">{t('settings.ai.nativeWebSearch')}</span>
+        <Switch checked={form.nativeWebSearch} label={t('settings.ai.nativeWebSearch')} onChange={toggleNativeWebSearch} />
+      </div>
+      <div className="flex items-center gap-3 pt-2">
         <button type="button" className={buttonClass('secondary')} disabled={testStatus.kind === 'testing'} onClick={testModel}>
           {testStatus.kind === 'testing' && <LoaderCircle className="animate-spin" />}
           {t('settings.ai.test')}

@@ -1,5 +1,5 @@
 import { requestJson } from '../../shared/api/request-json';
-import type { DiagramChatMessage } from './use-diagram-chat';
+import type { DiagramChatMessage } from './diagram-chat-session';
 
 export type ChatSummary = { id: string; title: string; updatedAt: string };
 

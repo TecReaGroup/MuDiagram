@@ -6,6 +6,10 @@ import { installHandTool, type HandToolTitles } from './drawio-hand-tool';
 
 const GENERAL_ENTRY_ID = 'general';
 const HIDDEN_GENERAL_PALETTE_IDS = ['misc', 'advanced'] as const;
+// Like the preview, fitting only shrinks a large diagram; a small one stays at 100%.
+const MAX_FIT_SCALE = 1;
+// Any of these on the canvas means the user is moving the view, which ends keeping it fitted.
+const VIEW_MOVING_EVENTS = ['pointerdown', 'wheel'] as const;
 
 export type SelectedCell = { id: string; label: string };
 
@@ -13,6 +17,11 @@ export type DrawioEditorBridge = {
   readSelection: () => SelectedCell[];
   /** Puts the diagram of an mxfile on the canvas as one step that Ctrl+Z undoes. */
   replaceDiagram: (mxfileXml: string) => void;
+  /**
+   * Zooms out until the whole diagram fits (never above 100%) and centers it on the canvas, then
+   * keeps it fitted through canvas resizes until the user pans or zooms.
+   */
+  fitDiagram: () => void;
   /** Adds the select/hand toggle to draw.io's top toolbar; call once per editor. */
   installHandTool: (titles: HandToolTitles) => void;
 };
@@ -23,6 +32,7 @@ type MxGraph = {
   container: HTMLElement;
   panningHandler: { isForcePanningEvent: (mouseEvent: MxMouseEvent) => boolean };
   getSelectionCells: () => MxCell[];
+  clearSelection: () => void;
   convertValueToString: (cell: MxCell) => string;
   addListener: (eventName: string, listener: () => void) => void;
 };
@@ -41,6 +51,8 @@ export type DrawioEditorUi = {
   sketchPickerMenuElt: HTMLElement;
   // Executes draw.io's undoable ReplaceDiagram change on the current page.
   replaceDiagramData: (graphModelXml: string) => void;
+  // Fits the selection instead when one exists, so callers clear it first.
+  fitDiagramToWindow: (maxScale?: number) => void;
   fireEvent: (event: object) => void;
   toggleShapesPanel: (isVisible: boolean) => void;
   toggleFormatPanel: (isVisible: boolean) => void;
@@ -90,6 +102,44 @@ function hideSidePanels(editorUi: DrawioEditorUi) {
   editorUi.toggleFormatPanel(false);
 }
 
+/**
+ * NOTE: draw.io's canvas often changes size after a fit, and it then keeps the diagram where it was
+ * on screen, i.e. off-center: hiding the Shapes panel widens the canvas only after a 100ms slide-out,
+ * and a window resize (the iframe moving from its warm-up size onto the slot) is handled 100ms late.
+ * Both hit the first project of a tab, so its fit landed off-center. Observing the canvas container
+ * refits after any of them, since the observer reports after draw.io has adjusted the scroll.
+ */
+function installDiagramFitting(editorUi: DrawioEditorUi) {
+  const { graph } = editorUi.editor;
+  let isKeepingFitted = false;
+  const fit = () => {
+    graph.clearSelection();
+    editorUi.fitDiagramToWindow(MAX_FIT_SCALE);
+  };
+
+  // The frame's own constructor and frame loop: the container lives in the iframe's document.
+  const frameWindow = graph.container.ownerDocument.defaultView!;
+  let observedSize = '';
+  const refitOnResize = ([entry]: ResizeObserverEntry[]) => {
+    const size = `${entry.contentRect.width}x${entry.contentRect.height}`;
+    if (size === observedSize) return;
+    observedSize = size;
+    // Fitting can toggle scrollbars and resize the container again; doing it inside the callback
+    // makes the browser report "ResizeObserver loop completed with undelivered notifications".
+    frameWindow.requestAnimationFrame(() => { if (isKeepingFitted) fit(); });
+  };
+  new frameWindow.ResizeObserver(refitOnResize).observe(graph.container);
+  const stopKeepingFitted = () => { isKeepingFitted = false; };
+  for (const eventName of VIEW_MOVING_EVENTS) {
+    graph.container.addEventListener(eventName, stopKeepingFitted, { capture: true, passive: true });
+  }
+
+  return () => {
+    fit();
+    isKeepingFitted = true;
+  };
+}
+
 function readGraphModelXml(mxfileXml: string) {
   const graphModel = new DOMParser().parseFromString(mxfileXml, 'application/xml').querySelector('mxGraphModel');
   if (!graphModel) throw new Error('The diagram has no uncompressed <mxGraphModel>');
@@ -119,6 +169,7 @@ export function connectDrawioEditor(frameWindow: Window): DrawioEditorBridge | n
       label: toPlainText(graph.convertValueToString(cell)),
     })),
     replaceDiagram: mxfileXml => connectedEditorUi.replaceDiagramData(readGraphModelXml(mxfileXml)),
+    fitDiagram: installDiagramFitting(connectedEditorUi),
     installHandTool: titles => installHandTool(connectedEditorUi, titles),
   };
 }

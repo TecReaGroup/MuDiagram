@@ -152,9 +152,11 @@
 }
 
 @utility dot-grid {
-  background-color: var(--color-sunken);
-  background-image: radial-gradient(rgb(23 23 28 / 0.09) 1px, transparent 1px);
-  background-size: 16px 16px;
+  background-color: #fcfcfd;
+  background-image: radial-gradient(rgb(23 23 28 / 0.2) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+  /* `space` draws only whole tiles, so no dot is clipped at the card edges. */
+  background-repeat: space;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -10,9 +10,11 @@ import { log, serializeError } from '../../infrastructure/logger.mjs';
 import { HttpError } from '../../shared/http-error.mjs';
 import { readJsonBody, sendJson } from '../../shared/http.mjs';
 import { readAiSetting } from '../setting/ai-setting.mjs';
+import { readSetting } from '../setting/setting-store.mjs';
 import { diagramTools } from './diagram-tools.mjs';
-import { buildLanguageModel, createLanguageModel } from './language-model.mjs';
+import { buildLanguageModel } from './language-model.mjs';
 import { buildDiagramInstructions } from './system-prompt.mjs';
+import { WEB_TOOL_INSTRUCTIONS, webTools } from './web-tools.mjs';
 
 const MODEL_TEST_TIMEOUT_MS = 30_000;
 const MODEL_TEST_PROMPT = 'Reply with OK.';
@@ -30,12 +32,17 @@ function readLatestSelection(messages) {
   return selectedCells;
 }
 
-async function readChatRequest(request) {
+function buildChatTooling(aiSetting) {
+  if (!aiSetting.nativeWebSearch) return { tools: diagramTools, extraInstructions: '' };
+  return { tools: { ...diagramTools, ...webTools }, extraInstructions: WEB_TOOL_INSTRUCTIONS };
+}
+
+async function readChatRequest(request, tools) {
   const body = await readJsonBody(request);
   if (typeof body?.xml !== 'string') throw new HttpError(400, 'xml must be the current diagram XML');
   let messages;
   try {
-    messages = await validateUIMessages({ messages: body.messages, tools: diagramTools });
+    messages = await validateUIMessages({ messages: body.messages, tools });
   } catch {
     throw new HttpError(400, 'messages must be valid UI messages');
   }
@@ -67,8 +74,10 @@ export const aiRoutes = [
     method: 'POST',
     path: new RegExp('^/api/ai/chat$'),
     handle: async (request, response) => {
-      const { messages, xml, selectedCells } = await readChatRequest(request);
-      const model = await createLanguageModel();
+      const aiSetting = (await readSetting()).ai ?? {};
+      const model = buildLanguageModel(aiSetting);
+      const { tools, extraInstructions } = buildChatTooling(aiSetting);
+      const { messages, xml, selectedCells } = await readChatRequest(request, tools);
       const abortController = new AbortController();
       response.on('close', () => {
         if (!response.writableFinished) abortController.abort();
@@ -77,9 +86,9 @@ export const aiRoutes = [
       const startedAt = Date.now();
       const chatStream = streamText({
         model,
-        instructions: buildDiagramInstructions(xml, selectedCells),
+        instructions: buildDiagramInstructions(xml, selectedCells) + extraInstructions,
         messages: await convertToModelMessages(messages),
-        tools: diagramTools,
+        tools,
         abortSignal: abortController.signal,
         onError: ({ error }) => log('error', 'AI', 'Chat stream failed', { error: serializeError(error) }),
         onFinish: ({ finishReason, totalUsage }) => log('info', 'AI', 'Chat turn finished', {

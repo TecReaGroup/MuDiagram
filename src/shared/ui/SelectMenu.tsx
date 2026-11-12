@@ -3,6 +3,10 @@ import type { KeyboardEvent } from 'react';
 import { FIELD_INPUT_CLASS, FIELD_OPTION_CLASS, MENU_PANEL_CLASS } from './control-class';
 import { usePopover } from './use-popover';
 
+const MAX_VISIBLE_OPTIONS = 3;
+// Options are h-8 (2rem) with gap-0.5 between them, inside the panel's p-1; more options scroll.
+const OPTION_LIST_MAX_HEIGHT = `calc(${MAX_VISIBLE_OPTIONS} * 2rem + ${MAX_VISIBLE_OPTIONS - 1} * 0.125rem + 0.5rem)`;
+
 export type SelectOption<T> = { value: T; label: string };
 
 type SelectMenuProps<T extends string | null> = {
@@ -44,7 +48,7 @@ export function SelectMenu<T extends string | null>({ value, options, onChange }
       </button>
 
       {isOpen && (
-        <div role="menu" className={`${MENU_PANEL_CLASS} scrollbar-subtle absolute inset-x-0 top-full mt-1.5 max-h-56 origin-top overflow-y-auto`}>
+        <div role="menu" className={`${MENU_PANEL_CLASS} scrollbar-subtle absolute inset-x-0 top-full mt-1.5 origin-top overflow-y-auto`} style={{ maxHeight: OPTION_LIST_MAX_HEIGHT }}>
           {options.map(option => {
             const isSelected = option.value === value;
             return (
@@ -54,7 +58,8 @@ export function SelectMenu<T extends string | null>({ value, options, onChange }
                 role="menuitemradio"
                 aria-checked={isSelected}
                 onClick={() => select(option.value)}
-                className={FIELD_OPTION_CLASS}
+                // shrink-0: in the height-capped flex column, options would squash instead of scrolling.
+                className={`${FIELD_OPTION_CLASS} shrink-0`}
               >
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 {isSelected && <Check className="size-4 shrink-0 text-ink" />}

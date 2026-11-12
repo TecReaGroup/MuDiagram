@@ -29,6 +29,9 @@ const EDITOR_URL_PARAMETERS = {
   modified: false,
 } as const;
 const REVEAL_TRANSITION = 'opacity 300ms';
+// draw.io's window.onerror skips only Chrome's old wording of this benign notice; this wording
+// (current Chrome and Firefox) would otherwise pop up its "Error:" dialog.
+const RESIZE_OBSERVER_LOOP_MESSAGE = 'ResizeObserver loop completed with undelivered notifications.';
 
 export type DiagramExportRequest = { format: 'svg' | 'png'; transparent: boolean; border: string };
 export type DiagramExport = { format: string; data: string; xml: string };
@@ -45,6 +48,8 @@ export type DiagramSession = {
   readSelection: () => SelectedCell[];
   /** Replaces the whole diagram as one step that Ctrl+Z undoes, or as a full load without internals. */
   replaceDiagram: (xml: string) => void;
+  /** Fits and centers the diagram on the canvas; does nothing without draw.io's internals. */
+  fitDiagram: () => void;
   exportDiagram: (request: DiagramExportRequest) => void;
   /** Clears draw.io's "unsaved changes" state, which otherwise blocks page unload. */
   markSaved: () => void;
@@ -154,6 +159,7 @@ function handleEditorMessage(event: MessageEvent) {
       if (!activeSession) break;
       if (bridge === undefined) connectBridge(activeSession.handToolTitles);
       if (unacknowledgedLoadCount > 0) break;
+      bridge?.fitDiagram();
       frame!.style.opacity = '1';
       activeSession.listener.onLoad(message.xml!);
       break;
@@ -166,6 +172,16 @@ function handleEditorMessage(event: MessageEvent) {
       }
       break;
   }
+}
+
+/**
+ * A capture listener on the window itself runs before the `onerror` handler draw.io assigns,
+ * so the notice never reaches it; real errors pass through untouched.
+ */
+function ignoreResizeObserverLoopNotice(frameWindow: Window) {
+  frameWindow.addEventListener('error', event => {
+    if (event.message === RESIZE_OBSERVER_LOOP_MESSAGE) event.stopImmediatePropagation();
+  }, { capture: true });
 }
 
 /** Starts draw.io in a hidden iframe if it is not running yet; safe to call any number of times. */
@@ -187,6 +203,7 @@ export function warmUpDrawioEditor() {
     transition: REVEAL_TRANSITION,
   });
   window.addEventListener('message', handleEditorMessage);
+  frame.addEventListener('load', () => ignoreResizeObserverLoopNotice(frame!.contentWindow!), { once: true });
   frame.src = buildEditorUrl();
   frameCreatedAt = performance.now();
   // First in <body>: the app's own positioned overlays (popovers, side panels) still paint above it.
@@ -209,6 +226,7 @@ export function openDrawioEditor(request: OpenRequest): DiagramSession {
       if (bridge) bridge.replaceDiagram(xml);
       else loadDiagram(xml);
     },
+    fitDiagram: () => bridge?.fitDiagram(),
     exportDiagram: exportRequest => postToEditor('export', exportRequest),
     markSaved: () => postToEditor('status', { message: '', modified: false }),
     close: () => {

@@ -13,8 +13,10 @@ const MODULE = 'DiagramEditor';
 export type DiagramCanvasHandle = {
   /** The mxfile xml currently on the canvas, including edits not saved yet; empty until loaded. */
   readXml: () => string;
-  /** Replaces the whole diagram as one step that Ctrl+Z undoes, and saves it. */
+  /** Replaces the whole diagram as one step that Ctrl+Z undoes, and saves it; waits for the editor if it is still loading. */
   loadXml: (xml: string) => void;
+  /** Fits and centers the diagram on the canvas, as it is when a project opens. */
+  fitDiagram: () => void;
   /** The cells selected on the canvas right now; empty until the editor is ready. */
   readSelection: () => SelectedCell[];
 };
@@ -24,6 +26,8 @@ export const DiagramCanvas = forwardRef<DiagramCanvasHandle, { projectId: string
   const slotRef = useRef<HTMLDivElement>(null);
   const sessionRef = useRef<DiagramSession | null>(null);
   const latestXmlRef = useRef('');
+  // A diagram handed over before draw.io finished loading the project; replacing it earlier would be lost.
+  const queuedXmlRef = useRef<string | null>(null);
   const [isDiagramLoaded, setIsDiagramLoaded] = useState(false);
   const { handleAutoSave, handleExport } = useDiagramAutosave(projectId, sessionRef);
   const { t } = useI18n();
@@ -37,15 +41,23 @@ export const DiagramCanvas = forwardRef<DiagramCanvasHandle, { projectId: string
     queryClient.fetchQuery(diagramXmlQuery(projectId)).then(
       xml => {
         if (!isCurrent) return;
-        latestXmlRef.current = xml;
+        latestXmlRef.current = queuedXmlRef.current ?? xml;
         sessionRef.current = openDrawioEditor({
           slot: slotRef.current!,
           xml,
           handToolTitles: { select: t('editor.selectTool'), hand: t('editor.handTool') },
           listener: {
             onLoad: loadedXml => {
-              latestXmlRef.current = loadedXml;
               setIsDiagramLoaded(true);
+              const queuedXml = queuedXmlRef.current;
+              queuedXmlRef.current = null;
+              if (queuedXml === null) {
+                latestXmlRef.current = loadedXml;
+                return;
+              }
+              sessionRef.current!.replaceDiagram(queuedXml);
+              sessionRef.current!.fitDiagram();
+              handleAutoSave();
             },
             onChange: changedXml => {
               latestXmlRef.current = changedXml;
@@ -68,11 +80,16 @@ export const DiagramCanvas = forwardRef<DiagramCanvasHandle, { projectId: string
     readXml: () => latestXmlRef.current,
     loadXml: xml => {
       latestXmlRef.current = xml;
-      sessionRef.current?.replaceDiagram(xml);
+      if (!isDiagramLoaded) {
+        queuedXmlRef.current = xml;
+        return;
+      }
+      sessionRef.current!.replaceDiagram(xml);
       handleAutoSave();
     },
+    fitDiagram: () => sessionRef.current?.fitDiagram(),
     readSelection: () => sessionRef.current?.readSelection() ?? [],
-  }), [handleAutoSave]);
+  }), [handleAutoSave, isDiagramLoaded]);
 
   // The slot is positioned and comes after the fixed editor iframe in the DOM, so it paints above it;
   // without pointer-events-none it would swallow every click meant for the canvas.
