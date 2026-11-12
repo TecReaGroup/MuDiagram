@@ -110,19 +110,23 @@ class DiagramChatSession {
         // Web search calls stream through here too, but the model API has already run them.
         if (toolCall.dynamic || toolCall.toolName === 'web_search') return;
         const { toolName, toolCallId } = toolCall;
+        let toolOutput: Parameters<typeof this.chat.addToolOutput>[0];
         try {
           const checkpointXml = await applyDiagramToolCall(await this.#readDiagramXml(), toolCall);
           this.#showDiagram(checkpointXml);
           this.#setOpenChat({ ...this.#openChat, checkpoints: { ...this.#openChat.checkpoints, [toolCallId]: checkpointXml } });
-          await this.chat.addToolOutput({ tool: toolName, toolCallId, output: DIAGRAM_TOOL_SUCCESS_OUTPUT[toolName] });
+          toolOutput = { tool: toolName, toolCallId, output: DIAGRAM_TOOL_SUCCESS_OUTPUT[toolName] };
           log('info', MODULE, 'Diagram tool applied', { toolName, isEditorOpen: this.#canvasRef !== null });
         } catch (error) {
           const errorText = error instanceof Error ? error.message : String(error);
-          await this.chat.addToolOutput({ state: 'output-error', tool: toolName, toolCallId, errorText });
+          toolOutput = { state: 'output-error', tool: toolName, toolCallId, errorText };
           log('warn', MODULE, 'Diagram tool rejected', { toolName, ...serializeError(error) });
         }
-        // NOTE: The tool output may land after the stream has finished, so it gets its own save.
-        this.#saveWhenIdle();
+        // NOTE: Must not be awaited. onToolCall runs inside the SDK's serial stream job, and
+        // addToolOutput queues behind that job, so awaiting it deadlocks: the part stays
+        // "input-available" (the chip keeps saying "Drawing…") and the stream never finishes.
+        // The output may land after the stream has finished, so it gets its own save.
+        void Promise.resolve(this.chat.addToolOutput(toolOutput)).then(() => this.#saveWhenIdle());
       },
       onFinish: () => this.#saveWhenIdle(),
       onError: error => log('error', MODULE, 'Chat request failed', serializeError(error)),

@@ -22,6 +22,14 @@ const TARGET_DIRECTORY = fileURLToPath(new URL('../public/drawio', import.meta.u
 const VERSION_STAMP_FILE = join(TARGET_DIRECTORY, '.version');
 // Server-side parts of the .war that a static copy does not need.
 const SKIPPED_ARCHIVE_PREFIXES = ['WEB-INF/', 'META-INF/'];
+const EDITOR_PAGE_FILE = join(TARGET_DIRECTORY, 'index.html');
+// NOTE: draw.io's window.onerror skips only Chrome's old wording of the benign ResizeObserver notice
+// ("loop limit exceeded"); the current wording ("loop completed with undelivered notifications")
+// pops up its "Error:" dialog, e.g. from its own chromeless refit observer. Registered before any
+// draw.io script so it runs first in every draw.io instance (editor and preview), from the first frame.
+const RESIZE_OBSERVER_NOTICE_FILTER =
+  '<script>addEventListener("error",function(e){if(/^ResizeObserver loop/.test(e.message))e.stopImmediatePropagation()},true)</script>';
+const EDITOR_PAGE_PATCH_ANCHOR = '<script src="js/bootstrap.js"></script>';
 
 function readInstalledVersion() {
   try {
@@ -95,7 +103,16 @@ function installArchive(archive) {
   return fileCount;
 }
 
-async function main() {
+/** Idempotent, so it also patches copies installed before the patch existed. */
+function patchEditorPage() {
+  const page = readFileSync(EDITOR_PAGE_FILE, 'utf8');
+  if (page.includes(RESIZE_OBSERVER_NOTICE_FILTER)) return;
+  if (!page.includes(EDITOR_PAGE_PATCH_ANCHOR)) throw new Error(`draw.io index.html has no ${EDITOR_PAGE_PATCH_ANCHOR}`);
+  writeFileSync(EDITOR_PAGE_FILE, page.replace(EDITOR_PAGE_PATCH_ANCHOR, RESIZE_OBSERVER_NOTICE_FILTER + EDITOR_PAGE_PATCH_ANCHOR));
+  log('info', MODULE, 'Patched draw.io index.html to ignore the ResizeObserver loop notice');
+}
+
+async function installPinnedVersion() {
   if (readInstalledVersion() === DRAWIO_VERSION) return;
   log('info', MODULE, 'Downloading draw.io', { version: DRAWIO_VERSION });
   let archive;
@@ -110,6 +127,11 @@ async function main() {
   }
   const fileCount = installArchive(archive);
   log('info', MODULE, 'draw.io installed', { version: DRAWIO_VERSION, fileCount, directory: TARGET_DIRECTORY });
+}
+
+async function main() {
+  await installPinnedVersion();
+  patchEditorPage();
 }
 
 main().catch(error => {
