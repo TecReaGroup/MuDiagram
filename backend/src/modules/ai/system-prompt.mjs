@@ -19,7 +19,17 @@ Return XML only through tool calls, never in text. Never use a diagram to talk t
 - Group by layer or boundary (client, edge/gateway, services, data, external) using containers (swimlane or rounded rectangle with fillColor=none or a light fill)
 - Data stores use shape=cylinder3; queues/topics use shape=mxgraph.aws4.queue or a parallelogram; external systems use dashed strokes
 - Label edges with the protocol or intent (HTTP, gRPC, publish, read/write) when it adds meaning
-- Prefer a left-to-right or top-to-bottom main flow
+
+## Recommended layout and edge style
+Follow these defaults unless the user asks otherwise.
+- Main flow runs top-to-bottom and left-to-right
+- Vertical: upper layers are closer to the user or entry point, lower layers hold data and infrastructure
+- Horizontal: input enters on the left and output leaves on the right, following the call or data flow
+- Sync calls (HTTP, RPC, gRPC): solid line, endArrow=block, arrow from caller to callee (Client -> Server -> Database)
+- Async messages (MQ, events, Kafka): dashed line, endArrow=block, arrow along the message flow (Producer -> Queue/Topic -> Consumer)
+- Dependencies: dashed line, endArrow=open, arrow from the dependent to the dependency (A -> B means A depends on B)
+- True bidirectional channels (WebSocket, bidirectional streams): prefer two one-way arrows; use a double-headed arrow sparingly
+- Keep symbols consistent: the same meaning always uses the same color, shape and line style
 
 ## Layout
 - Start around x=40, y=40; space shapes 150-200px apart to leave routing channels for edges
