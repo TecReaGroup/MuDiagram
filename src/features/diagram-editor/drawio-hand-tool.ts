@@ -4,6 +4,8 @@ export type HandToolTitles = { select: string; hand: string };
 
 const HAND_MODE_CLASS = 'mu-hand-mode';
 const LEFT_MOUSE_BUTTON = 0;
+// Plain H, as in Figma; draw.io only binds Ctrl+Shift+H (fit window).
+const TOGGLE_KEY_CODE = 72;
 
 // NOTE: draw.io's simple-theme toolbar uses its "thin" icons: Material Symbols at the 48px optical
 // size, weight 300 (stroke 2.25/48), drawn at a 24px background size. The toggle must use that same
@@ -101,10 +103,13 @@ export function installHandTool(editorUi: DrawioEditorUi, titles: HandToolTitles
     toggleButton.title = isHandMode ? titles.hand : titles.select;
     graph.container.classList.toggle(HAND_MODE_CLASS, isHandMode);
   };
-  toggleButton.addEventListener('click', () => {
+  const toggleHandMode = () => {
     isHandMode = !isHandMode;
     renderToggleButton();
-  });
+  };
+  toggleButton.addEventListener('click', toggleHandMode);
+  // draw.io's key handler already skips keys while a label is being edited or a dialog is open.
+  editorUi.keyHandler.bindKey(TOGGLE_KEY_CODE, toggleHandMode);
   renderToggleButton();
 
   const toolbar = editorUi.sketchPickerMenuElt;

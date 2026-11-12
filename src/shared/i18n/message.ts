@@ -66,8 +66,8 @@ const ZH_CN_MESSAGES = {
   'editor.saved': '已保存',
   'editor.share': '分享',
   'editor.isPublic': '已公开',
-  'editor.selectTool': '选择（点击切换为抓手）',
-  'editor.handTool': '抓手：拖动画布（点击切换为选择）',
+  'editor.selectTool': '选择（点击或按 H 切换为抓手）',
+  'editor.handTool': '抓手：拖动画布（点击或按 H 切换为选择）',
   'editor.loading': '正在加载画布…',
 
   'ai.assistant': 'AI 助手',
@@ -183,8 +183,8 @@ const EN_US_MESSAGES: Record<MessageKey, string> = {
   'editor.saved': 'Saved',
   'editor.share': 'Share',
   'editor.isPublic': 'Public',
-  'editor.selectTool': 'Select (click for hand tool)',
-  'editor.handTool': 'Hand: drag to pan (click for select)',
+  'editor.selectTool': 'Select (click or H for hand tool)',
+  'editor.handTool': 'Hand: drag to pan (click or H for select)',
   'editor.loading': 'Loading canvas…',
 
   'ai.assistant': 'Assistant',

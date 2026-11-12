@@ -47,6 +47,8 @@ export type DrawioEditorUi = {
   editor: { graph: MxGraph };
   sidebar: DrawioSidebar;
   hoverIcons: { isResetEvent: (event: MouseEvent, allowShift?: boolean) => boolean };
+  // mxKeyHandler: `bindKey` fires only without Ctrl/Shift.
+  keyHandler: { bindKey: (keyCode: number, action: (event: KeyboardEvent) => void) => void };
   // The top-center toolbar of the "simple" UI; draw.io rebuilds its children on resize and reload.
   sketchPickerMenuElt: HTMLElement;
   // Executes draw.io's undoable ReplaceDiagram change on the current page.
