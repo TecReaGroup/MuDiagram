@@ -47,6 +47,7 @@ export type DiagramSession = {
   replaceDiagram: (xml: string) => void;
   /** Fits and centers the diagram on the canvas; does nothing without draw.io's internals. */
   fitDiagram: () => void;
+  /** Exports in the canvas's own colour scheme, never as a light/dark adaptive image. */
   exportDiagram: (request: DiagramExportRequest) => void;
   /** Clears draw.io's "unsaved changes" state, which otherwise blocks page unload. */
   markSaved: () => void;
@@ -213,7 +214,9 @@ export function openDrawioEditor(request: OpenRequest): DiagramSession {
       else loadDiagram(xml);
     },
     fitDiagram: () => bridge?.fitDiagram(),
-    exportDiagram: exportRequest => postToEditor('export', exportRequest),
+    // NOTE: without keepTheme draw.io writes SVG colours as light-dark() pairs, so viewers in dark mode
+    // see a different (dark-filled) image than the canvas.
+    exportDiagram: exportRequest => postToEditor('export', { ...exportRequest, keepTheme: true }),
     markSaved: () => postToEditor('status', { message: '', modified: false }),
     close: () => {
       if (activeSession === session) closeActiveSession();
